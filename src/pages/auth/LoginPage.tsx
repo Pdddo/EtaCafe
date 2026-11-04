@@ -13,15 +13,13 @@
 // ============================================================
 
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { login, register } from '../../api/auth';
+import { useAuth } from '../../context/AuthContext';
+import { Role } from '../../types/index';
 import './LoginPage.css';
 
-interface LoginPageProps {
-  onLoginSuccess?: (user: any) => void;
-  onNavigate?: (page: string) => void;
-}
-
-export default function LoginPage({ onLoginSuccess, onNavigate }: LoginPageProps) {
+export default function LoginPage() {
   const [tab, setTab] = useState<'login' | 'signup'>('login');
   const [error, setError] = useState<string>('');
   const [loading, setLoading] = useState<boolean>(false);
@@ -37,6 +35,18 @@ export default function LoginPage({ onLoginSuccess, onNavigate }: LoginPageProps
   const [regPassword, setRegPassword] = useState('');
   const [showRegPassword, setShowRegPassword] = useState(false);
 
+  const { login: authLogin, register: authRegister } = useAuth();
+  const navigate = useNavigate();
+
+  const getRedirectPathByRole = (role: Role) => {
+    switch (role) {
+      case 'kasir': return '/kasir/dashboard';
+      case 'dapur': return '/dapur/antrian';
+      case 'manajer': return '/manajer/dashboard';
+      default: return '/pelanggan/home';
+    }
+  };
+
   const handleTabChange = (newTab: 'login' | 'signup') => {
     setError('');
     setTab(newTab);
@@ -48,15 +58,8 @@ export default function LoginPage({ onLoginSuccess, onNavigate }: LoginPageProps
     setLoading(true);
 
     try {
-      const data = await login(loginEmail.trim(), loginPassword);
-      localStorage.setItem('etacafe_token', data.access_token);
-      localStorage.setItem('etacafe_user', JSON.stringify(data.user));
-
-      if (onLoginSuccess) {
-        onLoginSuccess(data.user);
-      } else {
-        alert(`Login berhasil! Selamat datang, ${data.user.name} (${data.user.role})`);
-      }
+      const role = await authLogin(loginEmail.trim(), loginPassword);
+      navigate(getRedirectPathByRole(role), { replace: true });
     } catch (err: any) {
       setError(err.message || 'Login gagal');
     } finally {
@@ -70,17 +73,8 @@ export default function LoginPage({ onLoginSuccess, onNavigate }: LoginPageProps
     setLoading(true);
 
     try {
-      await register(regName.trim(), regEmail.trim(), regPassword);
-      // Auto-login after registration
-      const data = await login(regEmail.trim(), regPassword);
-      localStorage.setItem('etacafe_token', data.access_token);
-      localStorage.setItem('etacafe_user', JSON.stringify(data.user));
-
-      if (onLoginSuccess) {
-        onLoginSuccess(data.user);
-      } else {
-        alert(`Registrasi berhasil! Selamat datang, ${data.user.name}`);
-      }
+      await authRegister(regName.trim(), regEmail.trim(), regPassword, 'pelanggan');
+      navigate('/pelanggan/home', { replace: true });
     } catch (err: any) {
       setError(err.message || 'Registrasi gagal');
     } finally {
@@ -254,21 +248,21 @@ export default function LoginPage({ onLoginSuccess, onNavigate }: LoginPageProps
           <button
             type="button"
             className="auth-footer-pill"
-            onClick={() => onNavigate?.('home')}
+            onClick={() => navigate('/pelanggan/home')}
           >
             our Company
           </button>
           <button
             type="button"
             className="auth-footer-pill"
-            onClick={() => onNavigate?.('products-coffee')}
+            onClick={() => navigate('/pelanggan/products')}
           >
             our Coffee
           </button>
           <button
             type="button"
             className="auth-footer-pill"
-            onClick={() => onNavigate?.('products-pastry')}
+            onClick={() => navigate('/pelanggan/products')}
           >
             our Pastry
           </button>

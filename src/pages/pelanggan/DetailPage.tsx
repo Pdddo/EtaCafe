@@ -1,20 +1,14 @@
 // ============================================================
 // HALAMAN : DetailPage
 // PERAN   : pelanggan
-// ROUTE   : /produk/:id
+// ROUTE   : /pelanggan/detail/:id
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
-import PelangganLayout from '../../components/layout/PelangganLayout';
+import { useNavigate, useParams } from 'react-router-dom';
 import { PelangganAPI, MenuItemData } from '../../api/pelanggan';
 import { useCart, formatRupiah } from '../../context/CartContext';
 import './DetailPage.css';
-
-interface DetailPageProps {
-  menuId?: number;
-  onNavigate?: (page: string, params?: any) => void;
-  onLogout?: () => void;
-}
 
 const FALLBACK_MENUS: Record<number, MenuItemData> = {
   1: {
@@ -109,8 +103,10 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
   },
 };
 
-export default function DetailPage({ menuId = 1, onNavigate, onLogout }: DetailPageProps) {
+export default function DetailPage() {
   const { addToCart } = useCart();
+  const navigate = useNavigate();
+  const { id } = useParams<{ id: string }>();
   const [item, setItem] = useState<MenuItemData | null>(null);
   const [quantity, setQuantity] = useState<number>(1);
   const [loading, setLoading] = useState<boolean>(true);
@@ -121,12 +117,12 @@ export default function DetailPage({ menuId = 1, onNavigate, onLogout }: DetailP
     async function fetchDetail() {
       setLoading(true);
       try {
-        const data = await PelangganAPI.getDetailMenu(menuId);
+        const data = await PelangganAPI.getDetailMenu(Number(id));
         if (isMounted) setItem(data);
       } catch (err) {
         console.warn('Gagal memanggil API getDetailMenu, menggunakan fallback tabel menu_items:', err);
         if (isMounted) {
-          setItem(FALLBACK_MENUS[menuId] || FALLBACK_MENUS[1]);
+          setItem(FALLBACK_MENUS[Number(id)] || FALLBACK_MENUS[1]);
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -137,7 +133,7 @@ export default function DetailPage({ menuId = 1, onNavigate, onLogout }: DetailP
     return () => {
       isMounted = false;
     };
-  }, [menuId]);
+  }, [id]);
 
   const handleAdd = () => {
     if (!item) return;
@@ -149,19 +145,12 @@ export default function DetailPage({ menuId = 1, onNavigate, onLogout }: DetailP
   };
 
   return (
-    <PelangganLayout
-      activeNav="products"
-      activeFooterPill={item?.category_id === 3 || item?.category_id === 4 ? 'pastry' : 'coffee'}
-      onNavigate={onNavigate}
-      onLogout={onLogout}
-      fullHeightContent
-    >
-      <div className="detail-page-container">
+    <div className="detail-page-container">
         {/* Tombol kembali overlay */}
         <button
           type="button"
           className="btn-back-overlay"
-          onClick={() => onNavigate?.('products')}
+          onClick={() => navigate('/pelanggan/products')}
         >
           ← Kembali ke Menu
         </button>
@@ -228,10 +217,8 @@ export default function DetailPage({ menuId = 1, onNavigate, onLogout }: DetailP
         ) : (
           <div className="error-state">Menu tidak ditemukan.</div>
         )}
+        {/* Toast notification */}
+        {toastMessage && <div className="products-toast">{toastMessage}</div>}
       </div>
-
-      {/* Toast notification */}
-      {toastMessage && <div className="products-toast">{toastMessage}</div>}
-    </PelangganLayout>
   );
 }

@@ -16,12 +16,16 @@
     "moduleDetection": "force",
     "allowJs": true,
     "jsx": "react-jsx",
+    "baseUrl": "./src",
+    "ignoreDeprecations": "6.0",
     "paths": {
       "@/*": [
-        "./*"
+        "*"
       ]
     },
     "allowImportingTsExtensions": true,
     "noEmit": true
   }
+
+
 }

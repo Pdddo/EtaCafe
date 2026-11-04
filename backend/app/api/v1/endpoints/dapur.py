@@ -13,9 +13,12 @@ from typing import List
 from app.db.database import get_db
 from app.models.models import Order, OrderStatus
 from app.schemas.schemas import OrderOut
+from app.core.deps import require_role
 
-router = APIRouter(prefix="/dapur", tags=["Role: Dapur"])
-
+router = APIRouter(
+    prefix="/dapur", tags=["Role: Dapur"],
+    dependencies=[Depends(require_role("dapur"))],
+)
 # ================= 1. ANTREAN DAPUR HANYA PESANAN DIKONFIRMASI (FR-19, FR-22, BR-09) =================
 @router.get("/orders/queue", response_model=List[OrderOut])
 def antrean_pesanan_dapur(db: Session = Depends(get_db)):

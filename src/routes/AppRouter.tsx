@@ -1,140 +1,210 @@
 // ============================================================
 // KOMPONEN : AppRouter
-// PERAN   : Navigasi Antarhalaman Aplikasi (Pelanggan)
+// PERAN   : Navigasi Antarhalaman Aplikasi dengan React Router
+//           dan Proteksi Route per Role (Pelanggan, Kasir, Dapur, Manajer)
 // ============================================================
 
-import React, { useState } from 'react';
+import React from 'react';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+  Outlet,
+} from 'react-router-dom';
+import { AuthProvider, useAuth } from '../context/AuthContext';
+import { Role } from '../types/index';
+
+// ===================== AUTH PAGES =====================
 import LoginPage from '../pages/auth/LoginPage';
+import RegisterPage from '../pages/auth/RegisterPage';
+
+// ===================== PELANGGAN PAGES =====================
 import HomePage from '../pages/pelanggan/HomePage';
 import ProductsPage from '../pages/pelanggan/ProductsPage';
 import DetailPage from '../pages/pelanggan/DetailPage';
 import CartPage from '../pages/pelanggan/CartPage';
+import CheckoutPage from '../pages/pelanggan/CheckoutPage';
 import SuccessPage from '../pages/pelanggan/SuccessPage';
+import TrackPage from '../pages/pelanggan/TrackPage';
+import RiwayatPage from '../pages/pelanggan/RiwayatPage';
+import RiwayatDetailPage from '../pages/pelanggan/RiwayatDetailPage';
+
+// ===================== KASIR PAGES =====================
+import KasirDashboardPage from '../pages/kasir/DashboardPage';
+import KasirDaftarPesananPage from '../pages/kasir/DaftarPesananPage';
+import KasirDetailPesananPage from '../pages/kasir/DetailPesananPage';
+import KasirStrukPage from '../pages/kasir/StrukPage';
+
+// ===================== DAPUR PAGES =====================
+import DapurAntrianPage from '../pages/dapur/AntrianPage';
+import DapurAntrianPesananPage from '../pages/dapur/AntrianPesananPage';
+import DapurDetailPesananPage from '../pages/dapur/DetailPesananPage';
+
+// ===================== MANAJER PAGES =====================
+import ManajerDashboardPage from '../pages/manajer/DashboardPage';
+import ManajerKelolaMenuPage from '../pages/manajer/KelolaMenuPage';
+import ManajerKelolaKategoriPage from '../pages/manajer/KelolaKategoriPage';
+import ManajerKelolaPromoPage from '../pages/manajer/KelolaPromoPage';
+import ManajerKelolaPenggunaPage from '../pages/manajer/KelolaPenggunaPage';
+import ManajerLaporanPage from '../pages/manajer/LaporanPage';
+
+// ===================== LAYOUTS =====================
+import PelangganLayout from '../components/layout/PelangganLayout';
+import KasirLayout from '../components/layout/KasirLayout';
+import DapurLayout from '../components/layout/DapurLayout';
+import ManajerLayout from '../components/layout/ManajerLayout';
+
+// ===================== PROTECTED ROUTE =====================
+import ProtectedRoute from './ProtectedRoute';
+
+// Halaman sederhana untuk unauthorized
+function UnauthorizedPage() {
+  const navigate = useNavigate();
+  return (
+    <div style={{ padding: '2rem', textAlign: 'center' }}>
+      <h2>Akses Ditolak</h2>
+      <p>Anda tidak memiliki hak akses ke halaman ini.</p>
+      <button onClick={() => navigate('/login')}>Kembali ke Login</button>
+    </div>
+  );
+}
+
+// Wrapper layout untuk Pelanggan
+function PelangganRoute() {
+  const { user, logout: onLogout } = useAuth();
+  return (
+    <PelangganLayout userName={user?.name ?? 'Pelanggan'}>
+      <Outlet />
+    </PelangganLayout>
+  );
+}
+
+// Wrapper layout untuk Kasir
+function KasirRoute() {
+  const { user, logout: onLogout } = useAuth();
+  return (
+    <KasirLayout userName={user?.name ?? 'Kasir'} onLogout={onLogout}>
+      <Outlet />
+    </KasirLayout>
+  );
+}
+
+// Wrapper layout untuk Dapur
+function DapurRoute() {
+  const { user, logout: onLogout } = useAuth();
+  return (
+    <DapurLayout userName={user?.name ?? 'Dapur'} onLogout={onLogout}>
+      <Outlet />
+    </DapurLayout>
+  );
+}
+
+// Wrapper layout untuk Manajer
+function ManajerRoute() {
+  const { user, logout: onLogout } = useAuth();
+  return (
+    <ManajerLayout userName={user?.name ?? 'Manajer'} onLogout={onLogout}>
+      <Outlet />
+    </ManajerLayout>
+  );
+}
 
 export default function AppRouter() {
-  const [user, setUser] = useState<any>(() => {
-    try {
-      const stored = localStorage.getItem('etacafe_user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  const { isLoading, isAuthenticated } = useAuth();
 
-  const [currentRoute, setCurrentRoute] = useState<string>(() => {
-    return user ? 'home' : 'login';
-  });
-
-  const [selectedMenuId, setSelectedMenuId] = useState<number>(1);
-  const [lastOrderData, setLastOrderData] = useState<any>(null);
-
-  const handleLoginSuccess = (loggedInUser: any) => {
-    setUser(loggedInUser);
-    setCurrentRoute('home');
-  };
-
-  const handleLogout = () => {
-    localStorage.removeItem('etacafe_token');
-    localStorage.removeItem('etacafe_user');
-    setUser(null);
-    setCurrentRoute('login');
-  };
-
-  const handleNavigate = (route: string, params?: any) => {
-    if (route === 'detail') {
-      if (params) setSelectedMenuId(Number(params));
-      setCurrentRoute('detail');
-    } else if (route === 'success') {
-      if (params) setLastOrderData(params);
-      setCurrentRoute('success');
-    } else {
-      setCurrentRoute(route);
-    }
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  // Jika belum login, selalu tampilkan halaman Login
-  if (!user || currentRoute === 'login') {
-    return (
-      <LoginPage
-        onLoginSuccess={handleLoginSuccess}
-        onNavigate={handleNavigate}
-      />
-    );
+  if (isLoading) {
+    return <div className="auth-loading">Memuat sesi...</div>;
   }
 
-  switch (currentRoute) {
-    case 'home':
-      return (
-        <HomePage
-          userName={user.name}
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-        />
-      );
+  return (
+    <BrowserRouter>
+      <Routes>
+        {/* ================= PUBLIC ROUTES ================= */}
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-    case 'products':
-      return (
-        <ProductsPage
-          initialType="coffee"
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
+        {/* Redirect root */}
+        <Route
+          path="/"
+          element={
+            isAuthenticated ? <Navigate to="/pelanggan/home" replace /> : <Navigate to="/login" replace />
+          }
         />
-      );
 
-    case 'products-coffee':
-      return (
-        <ProductsPage
-          initialType="coffee"
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-        />
-      );
+        {/* ================= PELANGGAN ROUTES ================= */}
+        <Route
+          path="/pelanggan/*"
+          element={
+            <ProtectedRoute allowedRoles={['pelanggan']}>
+              <PelangganRoute />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="home" element={<HomePage />} />
+          <Route path="products" element={<ProductsPage />} />
+          <Route path="products/:category" element={<ProductsPage />} />
+          <Route path="detail/:id" element={<DetailPage />} />
+          <Route path="cart" element={<CartPage />} />
+          <Route path="checkout" element={<CheckoutPage />} />
+          <Route path="success" element={<SuccessPage />} />
+          <Route path="track" element={<TrackPage />} />
+          <Route path="track/:id" element={<TrackPage />} />
+          <Route path="riwayat" element={<RiwayatPage />} />
+          <Route path="riwayat/:id" element={<RiwayatDetailPage />} />
+        </Route>
 
-    case 'products-pastry':
-      return (
-        <ProductsPage
-          initialType="pastry"
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-        />
-      );
+        {/* ================= KASIR ROUTES ================= */}
+        <Route
+          path="/kasir/*"
+          element={
+            <ProtectedRoute allowedRoles={['kasir']}>
+              <KasirRoute />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<KasirDashboardPage />} />
+          <Route path="orders" element={<KasirDaftarPesananPage />} />
+          <Route path="orders/:id" element={<KasirDetailPesananPage />} />
+          <Route path="struk/:id" element={<KasirStrukPage />} />
+        </Route>
 
-    case 'detail':
-      return (
-        <DetailPage
-          menuId={selectedMenuId}
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-        />
-      );
+        {/* ================= DAPUR ROUTES ================= */}
+        <Route
+          path="/dapur/*"
+          element={
+            <ProtectedRoute allowedRoles={['dapur']}>
+              <DapurRoute />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="antrian" element={<DapurAntrianPage />} />
+          <Route path="antrian-pesanan" element={<DapurAntrianPesananPage />} />
+          <Route path="detail/:id" element={<DapurDetailPesananPage />} />
+        </Route>
 
-    case 'checkout':
-    case 'cart':
-      return (
-        <CartPage
-          userName={user.name}
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-        />
-      );
+        {/* ================= MANAJER ROUTES ================= */}
+        <Route
+          path="/manajer/*"
+          element={
+            <ProtectedRoute allowedRoles={['manajer']}>
+              <ManajerRoute />
+            </ProtectedRoute>
+          }
+        >
+          <Route path="dashboard" element={<ManajerDashboardPage />} />
+          <Route path="menu" element={<ManajerKelolaMenuPage />} />
+          <Route path="kategori" element={<ManajerKelolaKategoriPage />} />
+          <Route path="promo" element={<ManajerKelolaPromoPage />} />
+          <Route path="pengguna" element={<ManajerKelolaPenggunaPage />} />
+          <Route path="laporan" element={<ManajerLaporanPage />} />
+        </Route>
 
-    case 'success':
-      return (
-        <SuccessPage
-          orderData={lastOrderData}
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-        />
-      );
-
-    default:
-      return (
-        <HomePage
-          userName={user.name}
-          onNavigate={handleNavigate}
-          onLogout={handleLogout}
-        />
-      );
-  }
+        {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </BrowserRouter>
+  );
 }

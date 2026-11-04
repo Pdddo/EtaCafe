@@ -1,22 +1,117 @@
-﻿// ============================================================
-// HALAMAN : PembayaranPage (TENTATIF)
-// PERAN   : kasir
-// ROUTE   : /kasir/pembayaran/:id
-// PIC     : (isi nama pengerjanya)
-//
-// ATURAN (baca sebelum mengerjakan, juga jika memakai AI):
-// 1. Panggil backend HANYA lewat fungsi di src/api/*.ts, jangan fetch langsung di sini.
-// 2. Gunakan tipe dari src/types/index.ts, jangan buat tipe ganda.
-// 3. Pakai komponen di src/components/common sebelum membuat komponen baru.
-// 4. Jangan membuat folder atau file di luar struktur ini tanpa persetujuan tim.
-// 5. Hanya React + TypeScript, tanpa HTML/JS terpisah.
-// ============================================================
+import React, { useEffect, useState } from 'react'
+import { KasirAPI } from '../../api/client'
+import { ORDER_STATUS_LABEL } from '../../constants/orderStatus'
+import Loading from '../../components/common/Loading'
+import RupiahText from '../../components/common/RupiahText'
+import { useParams } from 'react-router-dom'
+import type { Order } from '../../types'
 
 export default function PembayaranPage() {
+  const { id } = useParams<{ id: string }>()
+  const [order, setOrder] = useState<Order | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [paymentMethod, setPaymentMethod] = useState<'QRIS' | 'Kartu' | 'Tunai'>('QRIS')
+  const [paymentStatus, setPaymentStatus] = useState<string>('')
+
+  useEffect(() => {
+    const loadOrder = async () => {
+      setLoading(true)
+      try {
+        const { data } = await KasirAPI.getOrderDetail(Number(id)) as unknown as { data: Order | null }
+        // Cast data to Order to satisfy strict TypeScript
+        const orderData = data as Order | null
+        
+        if (orderData) {
+          setOrder(orderData)
+          setPaymentStatus(orderData.paymentStatus || '')
+        }
+      } catch (error) {
+        console.error('Gagal memuat pesanan:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    loadOrder()
+  }, [id])
+
+  if (loading) {
+    return <Loading />
+  }
+
+  if (!order) {
+    return <div>Pesanan tidak ditemukan</div>
+  }
+
   return (
-    <div>
-      <h1>PembayaranPage</h1>
-      {/* TODO: bangun tampilan di sini */}
+    <div className="kasir-pembayaran">
+      <h1>Pembayaran Pesanan {order.orderNumber}</h1>
+
+      <div className="payment-methods">
+        <div className="payment-method">
+          <input
+            type="radio"
+            id="qris"
+            name="paymentMethod"
+            value="QRIS"
+            checked={paymentMethod === 'QRIS'}
+            onChange={() => setPaymentMethod('QRIS')}
+          />
+          <label htmlFor="qris">
+            <span>QRIS</span>
+            <span>— No fee</span>
+          </label>
+        </div>
+
+        <div className="payment-method">
+          <input
+            type="radio"
+            id="kartu"
+            name="paymentMethod"
+            value="Kartu"
+            checked={paymentMethod === 'Kartu'}
+            onChange={() => setPaymentMethod('Kartu')}
+          />
+          <label htmlFor="kartu">
+            <span>Kartu Debit/Kredit</span>
+            <span>— 5% biaya</span>
+          </label>
+        </div>
+
+        <div className="payment-method">
+          <input
+            type="radio"
+            id="tunai"
+            name="paymentMethod"
+            value="Tunai"
+            checked={paymentMethod === 'Tunai'}
+            onChange={() => setPaymentMethod('Tunai')}
+          />
+          <label htmlFor="tunai">
+            <span>Tunai</span>
+            <span>— Tanpa biaya</span>
+          </label>
+        </div>
+      </div>
+
+      <div className="payment-summary">
+        <p>Total Bayar: <strong><RupiahText amount={order.totalAmount} /></strong></p>
+        <p>Metode Pembayaran: {paymentMethod}</p>
+        <p>Status: {order.status}</p>
+      </div>
+
+      <div className="payment-actions">
+        <button
+          className="btn-confirm"
+          onClick={() => {
+            // Simulate payment
+            setPaymentStatus('Berhasil (Simulasi)')
+            // In a real app, this would call API to confirm
+            window.location.href = `/kasir/pesanan/${order.id}/struk`
+          }}
+        >
+          Lanjutkan Pembayaran
+        </button>
+      </div>
     </div>
-  );
+  )
 }

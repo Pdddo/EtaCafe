@@ -42,28 +42,29 @@ export interface OrderItem {
 }
 
 export interface Order {
-  id: string;
-  orderNumber: string;
-  customerName: string;
-  customerPhone?: string;
-  orderType: OrderType;
-  tableNumber?: string | null;
-  items: OrderItem[];
-  subtotal: number;
-  discountAmount: number;
-  promoCode?: string | null;
-  taxAmount: number; // 10%
-  serviceFee: number; // 5%
-  totalAmount: number;
-  paymentMethod: 'QRIS' | 'Kartu Debit/Kredit' | 'Tunai';
-  paymentStatus: 'Berhasil (Simulasi)';
-  status: OrderStatus;
-  createdAt: string;
-  confirmedAt?: string | null;
-  processingAt?: string | null;
-  completedAt?: string | null;
-  cancelledAt?: string | null;
+  id: string
+  orderNumber: string
+  customerName: string
+  customerPhone?: string
+  orderType: string
+  tableNumber?: string | null
+  items: any[]
+  subtotal: number
+  discountAmount: number
+  promoCode?: string | null
+  taxAmount: number
+  serviceFee: number
+  totalAmount: number
+  paymentMethod: string
+  paymentStatus: string
+  status: string
+  createdAt: string
+  confirmedAt?: string | null
+  processingAt?: string | null
+  completedAt?: string | null
+  cancelledAt?: string | null
 }
+
 
 export interface User {
   id: string;

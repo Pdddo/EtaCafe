@@ -1,22 +1,82 @@
-﻿// ============================================================
-// HALAMAN : DashboardPage (TENTATIF)
-// PERAN   : kasir
-// ROUTE   : /kasir
-// PIC     : (isi nama pengerjanya)
-//
-// ATURAN (baca sebelum mengerjakan, juga jika memakai AI):
-// 1. Panggil backend HANYA lewat fungsi di src/api/*.ts, jangan fetch langsung di sini.
-// 2. Gunakan tipe dari src/types/index.ts, jangan buat tipe ganda.
-// 3. Pakai komponen di src/components/common sebelum membuat komponen baru.
-// 4. Jangan membuat folder atau file di luar struktur ini tanpa persetujuan tim.
-// 5. Hanya React + TypeScript, tanpa HTML/JS terpisah.
-// ============================================================
+﻿import React, { useEffect, useState } from 'react'
+import { KasirAPI } from '../../api/client'
+import Loading from '../../components/common/Loading'
+import RupiahText from '../../components/common/RupiahText'
+import type { Order } from '../../types'
 
 export default function DashboardPage() {
+  const [orders, setOrders] = useState<Order[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadOrders = async () => {
+      setLoading(true)
+      try {
+        const data = await KasirAPI.getPendingOrders()
+
+        // Pastikan data berupa array
+        if (Array.isArray(data)) {
+          setOrders(data)
+        }
+      } catch (error) {
+        console.error('Gagal memuat antrean pesanan:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadOrders()
+  }, [])
+
   return (
-    <div>
-      <h1>DashboardPage</h1>
-      {/* TODO: bangun tampilan di sini */}
+    <div className="kasir-dashboard">
+      <h1>Dashboard Kasir</h1>
+      <div className="dashboard-stats">
+        <div className="stat-card">
+          <h3>Antrean Pesanan</h3>
+          <p>{orders.length} menunggu konfirmasi</p>
+        </div>
+      </div>
+
+      <div className="orders-list">
+        <h3>Daftar Pesanan Menunggu Konfirmasi</h3>
+
+        {loading ? (
+          <p>Memuat...</p>
+        ) : orders.length === 0 ? (
+          <p>Tidak ada pesanan menunggu konfirmasi</p>
+        ) : (
+          <ul>
+            {orders.map((order) => (
+              <li key={order.id}>
+                <div>
+                  <strong>No. Pesanan:</strong> {order.orderNumber}
+                </div>
+                <div>
+                  <strong>Pelanggan:</strong> {order.customerName}
+                </div>
+                <div>
+                  <strong>Meja:</strong> {order.tableNumber || 'Langsir'}
+                </div>
+                <div>
+                  <strong>Total:</strong> <RupiahText amount={order.totalAmount} />
+                </div>
+                <div>
+                  <strong>Status:</strong> {order.status}
+                </div>
+                <button
+                  className="btn-confirm"
+                  onClick={() => {
+                    window.location.href = `/kasir/pesanan/${order.id}`
+                  }}
+                >
+                  Lihat Detail
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
-  );
+  )
 }

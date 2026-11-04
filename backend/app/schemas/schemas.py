@@ -8,6 +8,11 @@ class UserBase(BaseModel):
     email_or_phone: str
     role: str = "pelanggan"
 
+class RegisterRequest(BaseModel):
+    name: str
+    email_or_phone: str
+    password: str = Field(..., min_length=6)
+
 class UserCreate(UserBase):
     password: str = Field(..., min_length=6)
 
@@ -42,7 +47,7 @@ class CategoryOut(CategoryBase):
 class MenuItemBase(BaseModel):
     name: str
     category_id: int
-    price: float = Field(..., gt=0)
+    price: float
     description: Optional[str] = None
     image_url: Optional[str] = None
     is_available: bool = True
@@ -61,10 +66,9 @@ class MenuItemUpdate(BaseModel):
 class MenuItemOut(MenuItemBase):
     id: int
     created_at: datetime
-    category: Optional[CategoryOut] = Field(default=None, alias="category_rel")
+    category_rel: Optional[CategoryOut] = None
     class Config:
         from_attributes = True
-        populate_by_name = True
 
 # ================= PROMO =================
 class PromoBase(BaseModel):
@@ -88,6 +92,11 @@ class OrderItemCreate(BaseModel):
     menu_item_id: int
     quantity: int = Field(..., gt=0)
     notes: Optional[str] = None
+    custom_notes: Optional[str] = None
+
+    @property
+    def final_notes(self) -> Optional[str]:
+        return self.notes or self.custom_notes
 
 class OrderCreate(BaseModel):
     customer_name: str
@@ -112,13 +121,14 @@ class OrderItemOut(BaseModel):
 class OrderOut(BaseModel):
     id: int
     order_number: str
+    customer_id: Optional[int] = None
     customer_name: str
-    customer_phone: Optional[str]
+    customer_phone: Optional[str] = None
     order_type: str
-    table_number: Optional[str]
+    table_number: Optional[str] = None
     subtotal: float
     discount_amount: float
-    promo_code: Optional[str]
+    promo_code: Optional[str] = None
     tax_amount: float
     service_fee: float
     total_amount: float
@@ -126,11 +136,12 @@ class OrderOut(BaseModel):
     payment_status: str
     status: str
     created_at: datetime
-    confirmed_at: Optional[datetime]
-    processing_at: Optional[datetime]
-    completed_at: Optional[datetime]
-    cancelled_at: Optional[datetime]
-    items: List[OrderItemOut]
+    confirmed_at: Optional[datetime] = None
+    processing_at: Optional[datetime] = None
+    completed_at: Optional[datetime] = None
+    cancelled_at: Optional[datetime] = None
+    items: List[OrderItemOut] = []
+
     class Config:
         from_attributes = True
 

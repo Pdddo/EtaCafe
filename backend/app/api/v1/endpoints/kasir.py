@@ -3,7 +3,6 @@ Endpoints Khusus Role: KASIR (CASHIER)
 Sistem Manajemen Pesanan Restoran/Kafe Versi 1.2
 Kebutuhan Fungsional: FR-16, FR-17, FR-18, FR-19, FR-20, FR-21
 Aturan Bisnis: BR-01, BR-02, BR-08, BR-09, BR-14
-Catatan Revisi 1.2: Konsep penolakan pesanan oleh kasir telah dihapus.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -14,8 +13,13 @@ from typing import List
 from app.db.database import get_db
 from app.models.models import Order, OrderStatus
 from app.schemas.schemas import OrderOut
+from app.core.deps import require_role
 
-router = APIRouter(prefix="/kasir", tags=["Role: Kasir"])
+router = APIRouter(
+    prefix="/kasir",
+    tags=["Role: Kasir"],
+    dependencies=[Depends(require_role("kasir"))],
+)
 
 # ================= 1. ANTREAN PESANAN MASUK (FR-16 & BR-01) =================
 @router.get("/orders/queue", response_model=List[OrderOut])
@@ -91,7 +95,7 @@ def cetak_struk_transaksi(order_id: int, db: Session = Depends(get_db)):
         )
 
     return {
-        "restoran": "RestoFlow Restoran & Kafe",
+        "restoran": "EtaCafe Restoran & Kafe",
         "alamat": "Jl. Perintis Kemerdekaan KM. 10 Tamalanrea, Makassar",
         "no_pesanan": order.order_number,
         "tipe_pesanan": order.order_type,

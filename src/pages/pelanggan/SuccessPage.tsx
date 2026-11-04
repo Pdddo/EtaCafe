@@ -1,7 +1,7 @@
 // ============================================================
 // HALAMAN : SuccessPage
 // PERAN   : pelanggan
-// ROUTE   : /pesanan-berhasil
+// ROUTE   : /pelanggan/success
 // PIC     : (isi nama pengerjanya)
 //
 // ATURAN (baca sebelum mengerjakan, juga jika memakai AI):
@@ -10,20 +10,19 @@
 // 3. Pakai komponen di src/components/common sebelum membuat komponen baru.
 // 4. Jangan membuat folder atau file di luar struktur ini tanpa persetujuan tim.
 // 5. Hanya React + TypeScript, tanpa HTML/JS terpisah.
+// 6. Jangan bungkus dengan PelangganLayout lagi (sudah disediakan oleh PelangganRoute).
 // ============================================================
 
 import React, { useState, useEffect } from 'react';
-import PelangganLayout from '../../components/layout/PelangganLayout';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { formatRupiah } from '../../context/CartContext';
 import { PelangganAPI } from '../../api/pelanggan';
 
-interface SuccessPageProps {
-  orderData?: any;
-  onNavigate?: (page: string, params?: any) => void;
-  onLogout?: () => void;
-}
+export default function SuccessPage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const orderData = location.state?.orderData;
 
-export default function SuccessPage({ orderData, onNavigate, onLogout }: SuccessPageProps) {
   const [order, setOrder] = useState<any>(orderData || {
     id: 101,
     order_number: 'ORD-98213',
@@ -79,13 +78,7 @@ export default function SuccessPage({ orderData, onNavigate, onLogout }: Success
   const activeIndex = getStepIndex(currentStatus);
 
   return (
-    <PelangganLayout
-      activeNav="checkout"
-      activeFooterPill="company"
-      onNavigate={onNavigate}
-      onLogout={onLogout}
-    >
-      <div className="max-w-2xl mx-auto p-6 md:p-10">
+    <div className="max-w-2xl mx-auto p-6 md:p-10">
         {/* Box Sukses */}
         <div className="bg-[#fbf5ee] border-l-4 border-emerald-600 p-5 rounded-xl mb-8 shadow-sm">
           <div className="flex items-center gap-3 text-emerald-800 font-bold text-lg">
@@ -142,20 +135,19 @@ export default function SuccessPage({ orderData, onNavigate, onLogout }: Success
             <button
               type="button"
               className="flex-1 bg-[#7B4A1E] hover:bg-[#3B1A0A] text-white py-3 rounded-full font-bold text-sm transition-all shadow"
-              onClick={() => onNavigate?.('products')}
+              onClick={() => navigate('/pelanggan/products')}
             >
               + Pesan Menu Tambahan
             </button>
             <button
               type="button"
               className="flex-1 bg-[#dbd6d0] hover:bg-stone-300 text-[#2C1008] py-3 rounded-full font-bold text-sm transition-all"
-              onClick={() => onNavigate?.('home')}
+              onClick={() => navigate('/pelanggan/home')}
             >
               Kembali ke Beranda
             </button>
           </div>
         </div>
       </div>
-    </PelangganLayout>
   );
 }

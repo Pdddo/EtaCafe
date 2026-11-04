@@ -9,16 +9,16 @@ from app.core.config import settings
 from app.db.database import engine, Base
 from app.api.v1.endpoints import auth, pelanggan, kasir, dapur, manajer
 
-# Otomatis membuat semua tabel di PostgreSQL jika belum ada
+# Otomatis membuat semua tabel jika belum ada
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="Backend REST API berbasis FastAPI dan PostgreSQL dengan pemisahan router per role: Pelanggan, Kasir, Dapur, Manajer."
+    description="Backend REST API berbasis FastAPI dengan pemisahan router per role: Pelanggan, Kasir, Dapur, Manajer."
 )
 
-# Konfigurasi CORS Middleware agar frontend React & HTML dapat berkomunikasi
+# Konfigurasi CORS Middleware agar frontend React dapat berkomunikasi
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.ALLOWED_ORIGINS,
@@ -38,7 +38,7 @@ app.include_router(manajer.router, prefix="/api/v1")
 def root():
     return {
         "status": "online",
-        "message": "RestoFlow API Backend (FastAPI + PostgreSQL) berjalan lancar.",
+        "message": "EtaCafe API Backend berjalan lancar.",
         "docs_url": "/docs",
         "endpoints_by_role": {
             "autentikasi": "/api/v1/auth",
@@ -49,3 +49,7 @@ def root():
         },
         "version": settings.VERSION
     }
+
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}

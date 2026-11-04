@@ -3,14 +3,22 @@ Endpoints Khusus Role: MANAJER (MANAGER)
 Sistem Manajemen Pesanan Restoran/Kafe Versi 1.2
 Kebutuhan Fungsional: FR-27, FR-28, FR-29, FR-30, FR-31, FR-32, FR-33, FR-34, FR-35, FR-36, FR-37, FR-38, FR-39
 Aturan Bisnis: BR-06, BR-07, BR-11, BR-13
+
+Perbaikan keamanan & stabilitas:
+- Seluruh endpoint hanya untuk role 'manajer' (NFR-04 & NFR-05).
+- Hapus menu yang sudah pernah dipesan -> otomatis dinonaktifkan (bukan error 500).
+- Hapus kategori yang masih punya menu -> ditolak dengan pesan jelas.
+- Hapus pengguna: tidak boleh akun sendiri, tidak boleh manajer terakhir,
+  dan tidak boleh jika pengguna sudah punya riwayat pesanan.
 """
 
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import Response
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy import func
 from datetime import datetime, timedelta
-from typing import List, Optional
+from typing import List
 import io
 import csv
 
@@ -29,13 +37,33 @@ from app.schemas.schemas import (
     SalesReportSummary,
 )
 from app.core.security import get_password_hash
+from app.core.deps import require_role
 
-router = APIRouter(prefix="/manajer", tags=["Role: Manajer"])
+router = APIRouter(
+    prefix="/manajer", tags=["Role: Manajer"],
+    dependencies=[Depends(require_role("manajer"))],
+)
+
+
+def _pastikan_kategori_ada(db: Session, category_id: int):
+    """Validasi bahwa kategori yang dipilih benar-benar ada."""
+    if not db.query(Category).filter(Category.id == category_id).first():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Kategori dengan ID {category_id} tidak ditemukan."
+        )
+
 
 # ================= 1. MANAJEMEN MASTER MENU (FR-27..30, FR-34, BR-06, BR-07) =================
+@router.get("/menus", response_model=List[MenuItemOut])
+def daftar_seluruh_menu(db: Session = Depends(get_db)):
+    """FR-27: Manajer melihat daftar seluruh menu beserta status ketersediaan."""
+    return db.query(MenuItem).all()
+
 @router.post("/menus", response_model=MenuItemOut, status_code=status.HTTP_201_CREATED)
 def tambah_menu_baru(payload: MenuItemCreate, db: Session = Depends(get_db)):
     """FR-27 & BR-06: Manajer menambah data menu baru."""
+    _pastikan_kategori_ada(db, payload.category_id)
     menu = MenuItem(**payload.model_dump())
     db.add(menu)
     db.commit()
@@ -48,7 +76,12 @@ def ubah_data_menu(menu_id: int, payload: MenuItemUpdate, db: Session = Depends(
     menu = db.query(MenuItem).filter(MenuItem.id == menu_id).first()
     if not menu:
         raise HTTPException(status_code=404, detail="Item menu tidak ditemukan.")
-    for key, val in payload.model_dump(exclude_unset=True).items():
+
+    data = payload.model_dump(exclude_unset=True)
+    if "category_id" in data and data["category_id"] is not None:
+        _pastikan_kategori_ada(db, data["category_id"])
+
+    for key, val in data.items():
         setattr(menu, key, val)
     db.commit()
     db.refresh(menu)
@@ -69,15 +102,38 @@ def atur_ketersediaan_menu(menu_id: int, is_available: bool, db: Session = Depen
     db.refresh(menu)
     return menu
 
-@router.delete("/menus/{menu_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.delete("/menus/{menu_id}")
 def hapus_menu(menu_id: int, db: Session = Depends(get_db)):
-    """FR-29 & BR-06: Manajer menghapus data menu."""
+    """
+    FR-29 & BR-06: Manajer menghapus data menu.
+
+    - Menu yang BELUM pernah dipesan  -> dihapus permanen.
+    - Menu yang SUDAH ada di riwayat pesanan -> TIDAK dihapus (agar riwayat & laporan
+      tetap utuh), melainkan ditandai 'Tidak Tersedia' (is_available = False).
+    """
     menu = db.query(MenuItem).filter(MenuItem.id == menu_id).first()
     if not menu:
         raise HTTPException(status_code=404, detail="Item menu tidak ditemukan.")
+
+    pernah_dipesan = db.query(OrderItem).filter(OrderItem.menu_item_id == menu_id).first()
+    if pernah_dipesan:
+        menu.is_available = False
+        db.commit()
+        return {
+            "deleted": False,
+            "deactivated": True,
+            "message": f"Menu '{menu.name}' sudah pernah dipesan sehingga tidak dihapus permanen. "
+                       f"Menu ditandai 'Tidak Tersedia' sehingga tidak dapat dipesan lagi."
+        }
+
+    nama = menu.name
     db.delete(menu)
     db.commit()
-    return None
+    return {
+        "deleted": True,
+        "deactivated": False,
+        "message": f"Menu '{nama}' berhasil dihapus."
+    }
 
 
 # ================= 2. MANAJEMEN MASTER KATEGORI (FR-31) =================
@@ -91,7 +147,11 @@ def tambah_kategori(payload: CategoryCreate, db: Session = Depends(get_db)):
     """FR-31: Menambah kategori menu baru."""
     category = Category(name=payload.name, slug=payload.slug)
     db.add(category)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Nama atau slug kategori sudah dipakai.")
     db.refresh(category)
     return category
 
@@ -103,16 +163,33 @@ def ubah_kategori(category_id: int, payload: CategoryCreate, db: Session = Depen
         raise HTTPException(status_code=404, detail="Kategori tidak ditemukan.")
     cat.name = payload.name
     cat.slug = payload.slug
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Nama atau slug kategori sudah dipakai.")
     db.refresh(cat)
     return cat
 
 @router.delete("/categories/{category_id}", status_code=status.HTTP_204_NO_CONTENT)
 def hapus_kategori(category_id: int, db: Session = Depends(get_db)):
-    """FR-31: Menghapus kategori menu."""
+    """
+    FR-31: Menghapus kategori menu.
+    Kategori yang masih memiliki menu TIDAK boleh dihapus, agar menu (dan riwayat
+    pesanannya) tidak ikut hilang. Pindahkan atau nonaktifkan menunya terlebih dahulu.
+    """
     cat = db.query(Category).filter(Category.id == category_id).first()
     if not cat:
         raise HTTPException(status_code=404, detail="Kategori tidak ditemukan.")
+
+    jumlah_menu = db.query(MenuItem).filter(MenuItem.category_id == category_id).count()
+    if jumlah_menu > 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Kategori '{cat.name}' masih memiliki {jumlah_menu} menu. "
+                   f"Pindahkan menu tersebut ke kategori lain terlebih dahulu."
+        )
+
     db.delete(cat)
     db.commit()
     return None
@@ -146,16 +223,48 @@ def tambah_pengguna(payload: UserCreate, db: Session = Depends(get_db)):
     return user
 
 @router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
-def hapus_pengguna(user_id: int, db: Session = Depends(get_db)):
+def hapus_pengguna(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current: User = Depends(require_role("manajer")),
+):
     """
     FR-32 & BR-11: Manajer menghapus data pengguna.
     CATATAN ATURAN BISNIS BR-11 & FR-33:
     'Manajer dapat menambah atau menghapus data pengguna (user), tetapi TIDAK DIIZINKAN mengubah (edit) data pengguna yang sudah ada.'
     Oleh karena itu tidak ada endpoint PUT/PATCH untuk user!
+
+    Pengaman tambahan:
+    - Manajer tidak boleh menghapus akunnya sendiri.
+    - Sistem tidak boleh kehilangan manajer terakhir.
+    - Pengguna yang sudah memiliki riwayat pesanan tidak boleh dihapus
+      (menjaga integritas riwayat & laporan penjualan).
     """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="Pengguna tidak ditemukan.")
+
+    if user.id == current.id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Anda tidak dapat menghapus akun Anda sendiri."
+        )
+
+    if user.role == "manajer":
+        jumlah_manajer = db.query(User).filter(User.role == "manajer").count()
+        if jumlah_manajer <= 1:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Tidak dapat menghapus manajer terakhir."
+            )
+
+    punya_pesanan = db.query(Order).filter(Order.customer_id == user_id).first()
+    if punya_pesanan:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Pengguna '{user.name}' sudah memiliki riwayat pesanan sehingga tidak dapat dihapus."
+        )
+
     db.delete(user)
     db.commit()
     return None
@@ -173,7 +282,11 @@ def tambah_promo(payload: PromoCreate, db: Session = Depends(get_db)):
     promo = Promo(**payload.model_dump())
     promo.code = promo.code.upper()
     db.add(promo)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Kode promo sudah dipakai.")
     db.refresh(promo)
     return promo
 
@@ -186,7 +299,11 @@ def ubah_promo(promo_id: int, payload: PromoCreate, db: Session = Depends(get_db
     for k, v in payload.model_dump().items():
         setattr(promo, k, v)
     promo.code = promo.code.upper()
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Kode promo sudah dipakai.")
     db.refresh(promo)
     return promo
 
@@ -215,7 +332,7 @@ def hapus_promo(promo_id: int, db: Session = Depends(get_db)):
 # ================= 5. LAPORAN PENJUALAN & EKSPOR (FR-36..39, BR-13) =================
 @router.get("/reports/summary", response_model=SalesReportSummary)
 def get_laporan_penjualan(
-    period: str = Query("harian", regex="^(harian|mingguan|bulanan)$"),
+    period: str = Query("harian", pattern="^(harian|mingguan|bulanan)$"),
     db: Session = Depends(get_db)
 ):
     """

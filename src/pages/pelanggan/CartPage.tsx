@@ -1,7 +1,7 @@
 // ============================================================
 // HALAMAN : CartPage
 // PERAN   : pelanggan
-// ROUTE   : /keranjang
+// ROUTE   : /pelanggan/cart
 // PIC     : (isi nama pengerjanya)
 //
 // ATURAN (baca sebelum mengerjakan, juga jika memakai AI):
@@ -13,19 +13,17 @@
 // ============================================================
 
 import React, { useState } from 'react';
-import PelangganLayout from '../../components/layout/PelangganLayout';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { useCart, formatRupiah } from '../../context/CartContext';
 import { PelangganAPI } from '../../api/pelanggan';
 import './CartPage.css';
 
-interface CartPageProps {
-  onNavigate?: (page: string, params?: any) => void;
-  onLogout?: () => void;
-  userName?: string;
-}
-
-export default function CartPage({ onNavigate, onLogout, userName = 'Pelanggan' }: CartPageProps) {
+export default function CartPage() {
+  const { user, logout: onLogout } = useAuth();
   const { cart, updateQuantity, clearCart, subtotal } = useCart();
+  const navigate = useNavigate();
+  const userName = user?.name ?? 'Pelanggan';
   const [tableNumber, setTableNumber] = useState('Meja 1');
   const [orderType, setOrderType] = useState<'qr_meja' | 'langsung'>('qr_meja');
   const [promoCode, setPromoCode] = useState('');
@@ -91,41 +89,19 @@ export default function CartPage({ onNavigate, onLogout, userName = 'Pelanggan' 
     try {
       const result = await PelangganAPI.checkoutOrder(payload);
       clearCart();
-      if (onNavigate) {
-        onNavigate('success', result);
-      } else {
-        alert('Pesanan berhasil dibuat!');
-      }
+      navigate('/pelanggan/success', { state: { orderData: result } });
     } catch (err: any) {
-      console.warn('Gagal checkout via backend, menggunakan simulasi pesanan:', err);
-      // Fallback simulasi pesanan berhasil
-      const mockResult = {
-        id: Math.floor(Math.random() * 9000) + 1000,
-        order_number: `ORD-${Date.now().toString().slice(-6)}`,
-        customer_name: userName,
-        table_number: tableNumber,
-        total_amount: totalAmount,
-        status: 'Menunggu Konfirmasi Kasir',
-        items: cart,
-        created_at: new Date().toISOString(),
-      };
-      clearCart();
-      if (onNavigate) {
-        onNavigate('success', mockResult);
-      }
+      console.warn('Checkout gagal:', err);
+      // Tampilkan error ke pengguna; biarkan mereka mencoba lagi
+      setError(err?.message ?? 'Checkout gagal, coba lagi nanti.');
+      // Tidak mengosongkan keranjang, tidak navigate ke halaman success
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <PelangganLayout
-      activeNav="checkout"
-      activeFooterPill="coffee"
-      onNavigate={onNavigate}
-      onLogout={onLogout}
-    >
-      <div className="receipt-page-wrapper">
+    <div className="receipt-page-wrapper">
         <div className="receipt-container">
           {/* ─── KOLOM KIRI: LOKASI & MEJA ─── */}
           <div className="receipt-left">
@@ -180,7 +156,7 @@ export default function CartPage({ onNavigate, onLogout, userName = 'Pelanggan' 
               <button
                 type="button"
                 className="btn-back-order"
-                onClick={() => onNavigate?.('products')}
+                onClick={() => navigate('/pelanggan/products')}
               >
                 &lt; Tambah Menu Lain
               </button>
@@ -312,6 +288,5 @@ export default function CartPage({ onNavigate, onLogout, userName = 'Pelanggan' 
           </div>
         </div>
       </div>
-    </PelangganLayout>
   );
 }

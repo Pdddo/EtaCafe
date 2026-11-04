@@ -1,34 +1,31 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
 import { useCart } from '../../context/CartContext';
 import './PelangganLayout.css';
 
 interface PelangganLayoutProps {
   children: React.ReactNode;
-  activeNav?: 'home' | 'products' | 'checkout' | 'track' | 'none';
+  userName?: string;
+  activeNav?: 'home' | 'products' | 'checkout' | 'riwayat' | 'none';
   activeFooterPill?: 'company' | 'coffee' | 'pastry';
-  onNavigate?: (route: string) => void;
-  onLogout?: () => void;
   fullHeightContent?: boolean;
 }
 
 export default function PelangganLayout({
   children,
+  userName = 'Pelanggan',
   activeNav = 'none',
   activeFooterPill,
-  onNavigate,
-  onLogout,
   fullHeightContent = false,
 }: PelangganLayoutProps) {
   const { cartCount } = useCart();
+  const { logout: onLogout } = useAuth();
+  const navigate = useNavigate();
 
   const handleLogout = () => {
-    if (onLogout) {
-      onLogout();
-    } else {
-      localStorage.removeItem('etacafe_token');
-      localStorage.removeItem('etacafe_user');
-      window.location.reload();
-    }
+    onLogout();
+    navigate('/login');
   };
 
   return (
@@ -38,16 +35,16 @@ export default function PelangganLayout({
         <button
           type="button"
           className="pelanggan-navbar-logo"
-          onClick={() => onNavigate?.('home')}
+          onClick={() => navigate('/pelanggan/home')}
         >
-          Coffee Shop
+          EtaCafe
         </button>
 
         <div className="pelanggan-navbar-links">
           <button
             type="button"
             className={`pelanggan-nav-link ${activeNav === 'products' ? 'active' : ''}`}
-            onClick={() => onNavigate?.('products')}
+            onClick={() => navigate('/pelanggan/products')}
           >
             Products
           </button>
@@ -57,10 +54,18 @@ export default function PelangganLayout({
             className={`pelanggan-nav-link pelanggan-cart-badge ${
               activeNav === 'checkout' ? 'active' : ''
             }`}
-            onClick={() => onNavigate?.('checkout')}
+            onClick={() => navigate('/pelanggan/cart')}
           >
             Checkout
             {cartCount > 0 && <span className="pelanggan-badge">{cartCount}</span>}
+          </button>
+
+          <button
+            type="button"
+            className={`pelanggan-nav-link ${activeNav === 'riwayat' ? 'active' : ''}`}
+            onClick={() => navigate('/pelanggan/riwayat')}
+          >
+            Riwayat
           </button>
 
           <button
@@ -86,9 +91,9 @@ export default function PelangganLayout({
       {/* ═══════════════════ FOOTER ═══════════════════ */}
       <footer className="pelanggan-footer">
         <div className="pelanggan-footer-brand">
-          <span className="pelanggan-footer-brand-logo">Coffee Shop</span>
+          <span className="pelanggan-footer-brand-logo">EtaCafe</span>
           <span className="pelanggan-footer-brand-tagline">
-            one Stop | one Heart | one Cup
+            Etalase Cafe &bull; one Stop | one Heart | one Cup
           </span>
         </div>
 
@@ -98,7 +103,7 @@ export default function PelangganLayout({
             className={`pelanggan-footer-pill ${
               activeFooterPill === 'company' ? 'active' : ''
             }`}
-            onClick={() => onNavigate?.('home')}
+            onClick={() => navigate('/pelanggan/home')}
           >
             our Company
           </button>
@@ -108,7 +113,7 @@ export default function PelangganLayout({
             className={`pelanggan-footer-pill ${
               activeFooterPill === 'coffee' ? 'active' : ''
             }`}
-            onClick={() => onNavigate?.('products-coffee')}
+            onClick={() => navigate('/pelanggan/products')}
           >
             our Coffee
           </button>
@@ -118,13 +123,13 @@ export default function PelangganLayout({
             className={`pelanggan-footer-pill ${
               activeFooterPill === 'pastry' ? 'active' : ''
             }`}
-            onClick={() => onNavigate?.('products-pastry')}
+            onClick={() => navigate('/pelanggan/products')}
           >
             our Pastry
           </button>
         </div>
 
-        <div className="pelanggan-footer-copy">@ 2023 All Rights Reserved</div>
+        <div className="pelanggan-footer-copy">@ 2026 EtaCafe. All Rights Reserved</div>
       </footer>
     </div>
   );
