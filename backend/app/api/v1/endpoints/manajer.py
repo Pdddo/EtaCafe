@@ -359,18 +359,28 @@ def get_laporan_penjualan(
 
     # Daftar menu terlaris (FR-38)
     completed_order_ids = [o.id for o in completed_orders]
-    top_items_query = db.query(
-        OrderItem.item_name,
-        func.sum(OrderItem.quantity).label("total_sold"),
-        func.sum(OrderItem.subtotal).label("total_sales")
-    ).filter(
-        OrderItem.order_id.in_(completed_order_ids)
-    ).group_by(OrderItem.item_name).order_by(func.sum(OrderItem.quantity).desc()).limit(5).all()
+    top_items = []
+    if completed_order_ids:
+        top_items_query = db.query(
+            OrderItem.item_name,
+            func.sum(OrderItem.quantity).label("total_sold"),
+            func.sum(OrderItem.subtotal).label("total_sales")
+        ).filter(
+            OrderItem.order_id.in_(completed_order_ids)
+        ).group_by(OrderItem.item_name).order_by(func.sum(OrderItem.quantity).desc()).limit(5).all()
 
-    top_items = [
-        {"name": row[0], "sold": int(row[1]), "sales": float(row[2])}
-        for row in top_items_query
-    ]
+        top_items = [
+            {
+                "name": row[0],
+                "item_name": row[0],
+                "sold": int(row[1]),
+                "total_quantity_sold": int(row[1]),
+                "sales": float(row[2]),
+                "total_sales_amount": float(row[2]),
+            }
+            for row in top_items_query
+            if row[0] and row[1] is not None
+        ]
 
     return SalesReportSummary(
         period=period,

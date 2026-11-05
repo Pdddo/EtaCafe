@@ -24,11 +24,17 @@ export async function completeOrder(orderId: number | string): Promise<Order> {
   });
 }
 
+export async function getCompletedOrdersToday(targetDate?: string): Promise<Order[]> {
+  const query = targetDate ? `?target_date=${encodeURIComponent(targetDate)}` : '';
+  return request<Order[]>(`/dapur/orders/completed-today${query}`);
+}
+
 export const DapurAPI = {
   getKitchenQueue,
   getOrderDetail,
   startProcessing,
   completeOrder,
+  getCompletedOrdersToday,
 };
 
 export default DapurAPI;

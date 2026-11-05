@@ -1,10 +1,10 @@
 // KOMPONEN : AuthContext
 // PERAN    : Manajemen autentikasi (login, logout, token, role) untuk seluruh aplikasi
-// API      : Menggunakan src/api/auth.ts (login, register)
+// API      : Menggunakan src/api/auth.ts (login, register, getCurrentUser)
 // Tipe     : Menggunakan src/types/index.ts (Role, User)
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { login, register, type AuthResponse } from '../api/auth';
+import { login, register, getCurrentUser, type AuthResponse } from '../api/auth';
 import { Role, User } from '../types/index';
 
 interface AuthContextType {
@@ -17,6 +17,7 @@ interface AuthContextType {
   logout: () => void;
   hasRole: (role: Role) => boolean;
   hasAnyRole: (roles: Role[]) => boolean;
+  checkAuth: () => Promise<boolean>;
 }
 
 const TOKEN_KEY = 'etacafe_token';
@@ -89,6 +90,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem(USER_KEY);
   }, []);
 
+  // Cek apakah token masih valid dengan memanggil endpoint /auth/me
+  const checkAuth = useCallback(async () => {
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+      setToken(null);
+      setUser(null);
+      return false;
+    }
+    try {
+      const data: AuthResponse = await getCurrentUser();
+      const userData: User = {
+        id: String(data.user.id),
+        name: data.user.name,
+        emailOrPhone: data.user.email_or_phone,
+        role: data.user.role as Role,
+        createdAt: data.user.created_at || new Date().toISOString(),
+      };
+      setToken(token);
+      setUser(userData);
+      return true;
+    } catch {
+      setToken(null);
+      setUser(null);
+      localStorage.removeItem(TOKEN_KEY);
+      localStorage.removeItem(USER_KEY);
+      return false;
+    }
+  }, []);
+
   const hasRole = useCallback((role: Role) => user?.role === role, [user]);
   const hasAnyRole = useCallback((roles: Role[]) => (user ? roles.includes(user.role) : false), [user]);
 
@@ -104,6 +134,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout: handleLogout,
         hasRole,
         hasAnyRole,
+        checkAuth,
       }}
     >
       {children}

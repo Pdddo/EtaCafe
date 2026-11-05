@@ -97,38 +97,6 @@ export default function PelangganLayout({
           </span>
         </div>
 
-        <div className="pelanggan-footer-links">
-          <button
-            type="button"
-            className={`pelanggan-footer-pill ${
-              activeFooterPill === 'company' ? 'active' : ''
-            }`}
-            onClick={() => navigate('/pelanggan/home')}
-          >
-            our Company
-          </button>
-
-          <button
-            type="button"
-            className={`pelanggan-footer-pill ${
-              activeFooterPill === 'coffee' ? 'active' : ''
-            }`}
-            onClick={() => navigate('/pelanggan/products')}
-          >
-            our Coffee
-          </button>
-
-          <button
-            type="button"
-            className={`pelanggan-footer-pill ${
-              activeFooterPill === 'pastry' ? 'active' : ''
-            }`}
-            onClick={() => navigate('/pelanggan/products')}
-          >
-            our Pastry
-          </button>
-        </div>
-
         <div className="pelanggan-footer-copy">@ 2026 EtaCafe. All Rights Reserved</div>
       </footer>
     </div>

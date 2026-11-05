@@ -2,14 +2,6 @@
 // HALAMAN : LoginPage
 // PERAN   : semua
 // ROUTE   : /login
-// PIC     : (isi nama pengerjanya)
-//
-// ATURAN (baca sebelum mengerjakan, juga jika memakai AI):
-// 1. Panggil backend HANYA lewat fungsi di src/api/*.ts, jangan fetch langsung di sini.
-// 2. Gunakan tipe dari src/types/index.ts, jangan buat tipe ganda.
-// 3. Pakai komponen di src/components/common sebelum membuat komponen baru.
-// 4. Jangan membuat folder atau file di luar struktur ini tanpa persetujuan tim.
-// 5. Hanya React + TypeScript, tanpa HTML/JS terpisah.
 // ============================================================
 
 import React, { useState } from 'react';
@@ -86,188 +78,162 @@ export default function LoginPage() {
     <div className="auth-page-wrapper">
       {/* ═══════════════════ NAVBAR ═══════════════════ */}
       <nav className="auth-navbar">
-        <span className="auth-navbar-logo">Coffee Shop</span>
+        <span className="auth-navbar-logo">EtaCafe</span>
       </nav>
       <div className="auth-nav-divider"></div>
 
-      {/* ═══════════════════ MAIN ═══════════════════ */}
+      {/* ═══════════════════ MAIN CONTENT ═══════════════════ */}
       <main className="auth-main-content">
-        <div className="auth-page-container">
-          {/* Background hero photo */}
-          <div className="auth-hero-bg">
-            <img
-              src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1400&q=80"
-              alt="Coffee shop background"
-            />
+        {/* Background hero photo (Full cover tanpa terpotong) */}
+        <div className="auth-hero-bg">
+          <img
+            src="https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?w=1600&q=80"
+            alt="Coffee shop background"
+          />
+          <div className="auth-hero-overlay" />
+        </div>
 
-            {/* Floating auth card */}
-            <div className="auth-card">
-              {/* Tabs: Login / Sign Up */}
-              <div className="auth-tabs">
-                <button
-                  type="button"
-                  className={`auth-tab ${tab === 'login' ? 'active' : ''}`}
-                  onClick={() => handleTabChange('login')}
-                >
-                  Login
-                </button>
-                <button
-                  type="button"
-                  className={`auth-tab ${tab === 'signup' ? 'active' : ''}`}
-                  onClick={() => handleTabChange('signup')}
-                >
-                  Sign Up
-                </button>
+        {/* Floating auth card */}
+        <div className="auth-card">
+          {/* Tabs: Login / Sign Up */}
+          <div className="auth-tabs">
+            <button
+              type="button"
+              className={`auth-tab ${tab === 'login' ? 'active' : ''}`}
+              onClick={() => handleTabChange('login')}
+            >
+              Login
+            </button>
+            <button
+              type="button"
+              className={`auth-tab ${tab === 'signup' ? 'active' : ''}`}
+              onClick={() => handleTabChange('signup')}
+            >
+              Sign Up
+            </button>
+          </div>
+
+          {/* Error message */}
+          {error && <div className="auth-error">{error}</div>}
+
+          {/* ─── LOGIN FORM ─── */}
+          {tab === 'login' && (
+            <form onSubmit={handleLoginSubmit}>
+              <div className="auth-form-group">
+                <label className="auth-label" htmlFor="login-email">
+                  Username or email
+                </label>
+                <input
+                  className="auth-input"
+                  type="text"
+                  id="login-email"
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder=""
+                  autoComplete="email"
+                  required
+                />
               </div>
 
-              {/* Error message */}
-              {error && <div className="auth-error">{error}</div>}
-
-              {/* ─── LOGIN FORM ─── */}
-              {tab === 'login' && (
-                <form onSubmit={handleLoginSubmit}>
-                  <div className="auth-form-group">
-                    <label className="auth-label" htmlFor="login-email">
-                      Username or email
-                    </label>
-                    <input
-                      className="auth-input"
-                      type="text"
-                      id="login-email"
-                      value={loginEmail}
-                      onChange={(e) => setLoginEmail(e.target.value)}
-                      placeholder=""
-                      autoComplete="email"
-                      required
-                    />
-                  </div>
-
-                  <div className="auth-form-group">
-                    <label className="auth-label" htmlFor="login-password">
-                      Password
-                    </label>
-                    <div className="auth-input-row">
-                      <input
-                        type={showLoginPassword ? 'text' : 'password'}
-                        id="login-password"
-                        value={loginPassword}
-                        onChange={(e) => setLoginPassword(e.target.value)}
-                        placeholder=""
-                        autoComplete="current-password"
-                        required
-                      />
-                      <button
-                        type="button"
-                        className="toggle-eye"
-                        onClick={() => setShowLoginPassword(!showLoginPassword)}
-                      >
-                        {showLoginPassword ? '🙈' : '👁'}
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="auth-forgot">Forgot password?</div>
-
-                  <button className="btn-auth" type="submit" disabled={loading}>
-                    {loading ? 'Loading...' : 'Login'}
+              <div className="auth-form-group">
+                <label className="auth-label" htmlFor="login-password">
+                  Password
+                </label>
+                <div className="auth-input-row">
+                  <input
+                    type={showLoginPassword ? 'text' : 'password'}
+                    id="login-password"
+                    value={loginPassword}
+                    onChange={(e) => setLoginPassword(e.target.value)}
+                    placeholder=""
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="toggle-eye"
+                    onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  >
+                    {showLoginPassword ? '🙈' : '👁'}
                   </button>
-                </form>
-              )}
+                </div>
+              </div>
 
-              {/* ─── REGISTER FORM ─── */}
-              {tab === 'signup' && (
-                <form onSubmit={handleRegisterSubmit}>
-                  <div className="auth-form-group">
-                    <label className="auth-label" htmlFor="reg-name">
-                      Full Name
-                    </label>
-                    <input
-                      className="auth-input"
-                      type="text"
-                      id="reg-name"
-                      value={regName}
-                      onChange={(e) => setRegName(e.target.value)}
-                      required
-                    />
-                  </div>
+              <div className="auth-forgot">Forgot password?</div>
 
-                  <div className="auth-form-group">
-                    <label className="auth-label" htmlFor="reg-email">
-                      Email or Phone
-                    </label>
-                    <input
-                      className="auth-input"
-                      type="text"
-                      id="reg-email"
-                      value={regEmail}
-                      onChange={(e) => setRegEmail(e.target.value)}
-                      required
-                    />
-                  </div>
+              <button className="btn-auth" type="submit" disabled={loading}>
+                {loading ? 'Loading...' : 'Login'}
+              </button>
+            </form>
+          )}
 
-                  <div className="auth-form-group">
-                    <label className="auth-label" htmlFor="reg-password">
-                      Password
-                    </label>
-                    <div className="auth-input-row">
-                      <input
-                        type={showRegPassword ? 'text' : 'password'}
-                        id="reg-password"
-                        value={regPassword}
-                        onChange={(e) => setRegPassword(e.target.value)}
-                        required
-                        minLength={6}
-                      />
-                      <button
-                        type="button"
-                        className="toggle-eye"
-                        onClick={() => setShowRegPassword(!showRegPassword)}
-                      >
-                        {showRegPassword ? '🙈' : '👁'}
-                      </button>
-                    </div>
-                  </div>
+          {/* ─── REGISTER FORM ─── */}
+          {tab === 'signup' && (
+            <form onSubmit={handleRegisterSubmit}>
+              <div className="auth-form-group">
+                <label className="auth-label" htmlFor="reg-name">
+                  Full Name
+                </label>
+                <input
+                  className="auth-input"
+                  type="text"
+                  id="reg-name"
+                  value={regName}
+                  onChange={(e) => setRegName(e.target.value)}
+                  required
+                />
+              </div>
 
-                  <button className="btn-auth" type="submit" disabled={loading}>
-                    {loading ? 'Loading...' : 'Sign Up'}
+              <div className="auth-form-group">
+                <label className="auth-label" htmlFor="reg-email">
+                  Email or Phone
+                </label>
+                <input
+                  className="auth-input"
+                  type="text"
+                  id="reg-email"
+                  value={regEmail}
+                  onChange={(e) => setRegEmail(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="auth-form-group">
+                <label className="auth-label" htmlFor="reg-password">
+                  Password
+                </label>
+                <div className="auth-input-row">
+                  <input
+                    type={showRegPassword ? 'text' : 'password'}
+                    id="reg-password"
+                    value={regPassword}
+                    onChange={(e) => setRegPassword(e.target.value)}
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    className="toggle-eye"
+                    onClick={() => setShowRegPassword(!showRegPassword)}
+                  >
+                    {showRegPassword ? '🙈' : '👁'}
                   </button>
-                </form>
-              )}
-            </div>
-          </div>
+                </div>
+              </div>
+
+              <button className="btn-auth" type="submit" disabled={loading}>
+                {loading ? 'Loading...' : 'Sign Up'}
+              </button>
+            </form>
+          )}
         </div>
       </main>
 
       {/* ═══════════════════ FOOTER ═══════════════════ */}
       <footer className="auth-footer">
-        <div className="auth-footer-brand">
-          <span className="auth-footer-brand-logo">Coffee Shop</span>
-          <span className="auth-footer-brand-tagline">one Stop | one Heart | one Cup</span>
+        <div className="auth-footer-copy">
+          @ 2026 EtaCafe. All Rights Reserved
         </div>
-        <div className="auth-footer-links">
-          <button
-            type="button"
-            className="auth-footer-pill"
-            onClick={() => navigate('/pelanggan/home')}
-          >
-            our Company
-          </button>
-          <button
-            type="button"
-            className="auth-footer-pill"
-            onClick={() => navigate('/pelanggan/products')}
-          >
-            our Coffee
-          </button>
-          <button
-            type="button"
-            className="auth-footer-pill"
-            onClick={() => navigate('/pelanggan/products')}
-          >
-            our Pastry
-          </button>
-        </div>
-        <div className="auth-footer-copy">@ 2023 All Rights Reserved</div>
       </footer>
     </div>
   );

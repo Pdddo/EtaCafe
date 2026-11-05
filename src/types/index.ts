@@ -10,6 +10,7 @@ export type OrderStatus =
 export type OrderType = 'langsung' | 'qr_meja';
 
 export interface MenuItem {
+  custom_notes?: string;
   id: string;
   name: string;
   category: string;

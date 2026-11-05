@@ -7,13 +7,14 @@ Aturan Bisnis: BR-02, BR-09, BR-10
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime
-from typing import List
+from datetime import datetime, date
+from typing import List, Optional
 
 from app.db.database import get_db
 from app.models.models import Order, OrderStatus
 from app.schemas.schemas import OrderOut
 from app.core.deps import require_role
+from sqlalchemy import func
 
 router = APIRouter(
     prefix="/dapur", tags=["Role: Dapur"],
@@ -100,3 +101,21 @@ def tandai_pesanan_selesai(order_id: int, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(order)
     return order
+
+
+@router.get("/orders/completed-today", response_model=List[OrderOut])
+def pesanan_selesai_hari_ini(target_date: Optional[str] = None, db: Session = Depends(get_db)):
+    """
+    Menampilkan daftar pesanan yang telah diselesaikan oleh Dapur.
+    Jika target_date diberikan (format YYYY-MM-DD), filter sesuai tanggal.
+    Jika tidak, tampilkan pesanan selesai hari ini atau pesanan selesai terbaru.
+    """
+    query = db.query(Order).filter(Order.status == OrderStatus.SELESAI)
+    if target_date and target_date.lower() != "all":
+        query = query.filter(func.date(func.coalesce(Order.completed_at, Order.created_at)) == target_date)
+    else:
+        # Default: pesanan selesai hari ini
+        today_orders = query.filter(func.date(func.coalesce(Order.completed_at, Order.created_at)) == date.today()).all()
+        if today_orders:
+            return today_orders
+    return query.order_by(func.coalesce(Order.completed_at, Order.created_at).desc()).limit(100).all()

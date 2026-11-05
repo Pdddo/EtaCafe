@@ -4,21 +4,64 @@
 import { request, API_BASE_URL, getAuthToken } from './client';
 import type { MenuItem, Category, User, Promo } from '../types';
 
+export interface ManajerMenuItem {
+  id: number | string;
+  name: string;
+  category_id?: number;
+  category?: string;
+  category_rel?: { id: number; name: string; slug: string };
+  price: number;
+  description?: string;
+  image_url?: string;
+  imageUrl?: string;
+  is_available?: boolean;
+  isAvailable?: boolean;
+}
+
+export interface ManajerCategory {
+  id: number | string;
+  name: string;
+  slug: string;
+}
+
+export interface ManajerUser {
+  id: number | string;
+  name: string;
+  email_or_phone: string;
+  emailOrPhone?: string;
+  role: 'pelanggan' | 'kasir' | 'dapur' | 'manajer' | string;
+  created_at?: string;
+  createdAt?: string;
+}
+
+export interface ManajerPromo {
+  id: number | string;
+  code: string;
+  description: string;
+  discount_type: 'percentage' | 'fixed' | string;
+  discount_value: number;
+  min_order?: number;
+  is_active: boolean;
+}
+
 export interface SalesReportSummary {
   period: 'harian' | 'mingguan' | 'bulanan' | string;
   total_orders_completed: number;
   total_revenue: number;
   average_order_value: number;
   top_selling_items: Array<{
-    item_name: string;
-    total_quantity_sold: number;
-    total_sales_amount: number;
+    name?: string;
+    item_name?: string;
+    sold?: number;
+    total_quantity_sold?: number;
+    sales?: number;
+    total_sales_amount?: number;
   }>;
 }
 
 // ================= 1. MENU =================
-export async function getMenus(): Promise<MenuItem[]> {
-  return request<MenuItem[]>('/manajer/menus');
+export async function getMenus(): Promise<ManajerMenuItem[]> {
+  return request<ManajerMenuItem[]>('/manajer/menus');
 }
 
 export async function createMenu(payload: {
@@ -28,8 +71,8 @@ export async function createMenu(payload: {
   description?: string;
   image_url?: string;
   is_available?: boolean;
-}): Promise<MenuItem> {
-  return request<MenuItem>('/manajer/menus', {
+}): Promise<ManajerMenuItem> {
+  return request<ManajerMenuItem>('/manajer/menus', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -45,8 +88,8 @@ export async function updateMenu(
     image_url?: string;
     is_available?: boolean;
   }
-): Promise<MenuItem> {
-  return request<MenuItem>(`/manajer/menus/${menuId}`, {
+): Promise<ManajerMenuItem> {
+  return request<ManajerMenuItem>(`/manajer/menus/${menuId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
@@ -55,8 +98,8 @@ export async function updateMenu(
 export async function toggleMenuAvailability(
   menuId: number | string,
   isAvailable: boolean
-): Promise<MenuItem> {
-  return request<MenuItem>(
+): Promise<ManajerMenuItem> {
+  return request<ManajerMenuItem>(
     `/manajer/menus/${menuId}/availability?is_available=${isAvailable}`,
     {
       method: 'PATCH',
@@ -71,15 +114,15 @@ export async function deleteMenu(menuId: number | string): Promise<any> {
 }
 
 // ================= 2. KATEGORI =================
-export async function getCategories(): Promise<Category[]> {
-  return request<Category[]>('/manajer/categories');
+export async function getCategories(): Promise<ManajerCategory[]> {
+  return request<ManajerCategory[]>('/manajer/categories');
 }
 
 export async function createCategory(payload: {
   name: string;
   slug: string;
-}): Promise<Category> {
-  return request<Category>('/manajer/categories', {
+}): Promise<ManajerCategory> {
+  return request<ManajerCategory>('/manajer/categories', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -88,8 +131,8 @@ export async function createCategory(payload: {
 export async function updateCategory(
   categoryId: number | string,
   payload: { name: string; slug: string }
-): Promise<Category> {
-  return request<Category>(`/manajer/categories/${categoryId}`, {
+): Promise<ManajerCategory> {
+  return request<ManajerCategory>(`/manajer/categories/${categoryId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
@@ -102,8 +145,8 @@ export async function deleteCategory(categoryId: number | string): Promise<any> 
 }
 
 // ================= 3. PENGGUNA =================
-export async function getUsers(): Promise<User[]> {
-  return request<User[]>('/manajer/users');
+export async function getUsers(): Promise<ManajerUser[]> {
+  return request<ManajerUser[]>('/manajer/users');
 }
 
 export async function createUser(payload: {
@@ -111,8 +154,8 @@ export async function createUser(payload: {
   email_or_phone: string;
   password: string;
   role: 'pelanggan' | 'kasir' | 'dapur' | 'manajer';
-}): Promise<User> {
-  return request<User>('/manajer/users', {
+}): Promise<ManajerUser> {
+  return request<ManajerUser>('/manajer/users', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -125,8 +168,8 @@ export async function deleteUser(userId: number | string): Promise<any> {
 }
 
 // ================= 4. PROMO =================
-export async function getPromos(): Promise<Promo[]> {
-  return request<Promo[]>('/manajer/promos');
+export async function getPromos(): Promise<ManajerPromo[]> {
+  return request<ManajerPromo[]>('/manajer/promos');
 }
 
 export async function createPromo(payload: {
@@ -136,8 +179,8 @@ export async function createPromo(payload: {
   discount_value: number;
   min_order?: number;
   is_active?: boolean;
-}): Promise<Promo> {
-  return request<Promo>('/manajer/promos', {
+}): Promise<ManajerPromo> {
+  return request<ManajerPromo>('/manajer/promos', {
     method: 'POST',
     body: JSON.stringify(payload),
   });
@@ -153,15 +196,15 @@ export async function updatePromo(
     min_order?: number;
     is_active?: boolean;
   }
-): Promise<Promo> {
-  return request<Promo>(`/manajer/promos/${promoId}`, {
+): Promise<ManajerPromo> {
+  return request<ManajerPromo>(`/manajer/promos/${promoId}`, {
     method: 'PUT',
     body: JSON.stringify(payload),
   });
 }
 
-export async function togglePromo(promoId: number | string): Promise<Promo> {
-  return request<Promo>(`/manajer/promos/${promoId}/toggle`, {
+export async function togglePromo(promoId: number | string): Promise<ManajerPromo> {
+  return request<ManajerPromo>(`/manajer/promos/${promoId}/toggle`, {
     method: 'PATCH',
   });
 }
@@ -181,7 +224,7 @@ export async function getSalesSummary(
 
 export async function downloadSalesCsv(): Promise<void> {
   const token = getAuthToken();
-  const res = await fetch(`${API_BASE_URL}/manajer/reports/export/csv`, {
+  const res = await fetch(`${API_BASE_URL}/manajer/reports/export-csv`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

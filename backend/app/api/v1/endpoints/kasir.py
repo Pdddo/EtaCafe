@@ -5,10 +5,10 @@ Kebutuhan Fungsional: FR-16, FR-17, FR-18, FR-19, FR-20, FR-21
 Aturan Bisnis: BR-01, BR-02, BR-08, BR-09, BR-14
 """
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
-from typing import List
+from typing import List, Optional
 
 from app.db.database import get_db
 from app.models.models import Order, OrderStatus
@@ -23,14 +23,26 @@ router = APIRouter(
 
 # ================= 1. ANTREAN PESANAN MASUK (FR-16 & BR-01) =================
 @router.get("/orders/queue", response_model=List[OrderOut])
-def antrean_pesanan_masuk_kasir(db: Session = Depends(get_db)):
+def antrean_pesanan_masuk_kasir(
+    status_filter: Optional[str] = Query(None, description="Filter status pesanan: 'all', 'menunggu', 'dikonfirmasi', 'proses', 'selesai'"),
+    db: Session = Depends(get_db)
+):
     """
-    FR-16: Menampilkan daftar pesanan baru kepada Kasir secara real-time
-    dengan status 'Menunggu Konfirmasi Kasir'.
+    FR-16: Menampilkan daftar pesanan kepada Kasir secara real-time.
+    Default status: 'Menunggu Konfirmasi Kasir'.
+    Mendukung filter: 'dikonfirmasi', 'proses', 'selesai', atau 'all'.
     """
-    return db.query(Order).filter(
-        Order.status == OrderStatus.MENUNGGU_KONFIRMASI
-    ).order_by(Order.created_at.asc()).all()
+    query = db.query(Order)
+    if not status_filter or status_filter == "menunggu":
+        query = query.filter(Order.status == OrderStatus.MENUNGGU_KONFIRMASI)
+    elif status_filter == "dikonfirmasi":
+        query = query.filter(Order.status == OrderStatus.DIKONFIRMASI)
+    elif status_filter in ("proses", "sedang_diproses"):
+        query = query.filter(Order.status == OrderStatus.SEDANG_DIPROSES)
+    elif status_filter == "selesai":
+        query = query.filter(Order.status == OrderStatus.SELESAI)
+    
+    return query.order_by(Order.created_at.desc()).all()
 
 
 # ================= 2. DETAIL PESANAN MASUK (FR-17 & BR-14) =================

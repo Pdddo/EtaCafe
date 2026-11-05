@@ -37,6 +37,12 @@ export async function getPendingOrders(): Promise<Order[]> {
   return request<Order[]>('/kasir/orders/queue');
 }
 
+export async function getOrders(statusFilter?: string): Promise<Order[]> {
+  return request<Order[]>(
+    statusFilter ? `/kasir/orders/queue?status_filter=${statusFilter}` : '/kasir/orders/queue'
+  );
+}
+
 export async function getOrderDetail(orderId: number | string): Promise<Order> {
   return request<Order>(`/kasir/orders/${orderId}`);
 }
@@ -51,11 +57,34 @@ export async function getReceipt(orderId: number | string): Promise<KasirReceipt
   return request<KasirReceipt>(`/kasir/orders/${orderId}/receipt`);
 }
 
+export async function getCategories(): Promise<any[]> {
+  return request<any[]>('/pelanggan/categories');
+}
+
+export async function getMenu(kategoriId?: number, search?: string): Promise<any[]> {
+  const query = new URLSearchParams();
+  if (kategoriId) query.append('kategori_id', String(kategoriId));
+  if (search) query.append('search', search);
+  const qs = query.toString();
+  return request<any[]>(`/pelanggan/menu${qs ? `?${qs}` : ''}`);
+}
+
+export async function createOrder(orderPayload: any): Promise<Order> {
+  return request<Order>('/pelanggan/orders', {
+    method: 'POST',
+    body: JSON.stringify(orderPayload),
+  });
+}
+
 export const KasirAPI = {
   getPendingOrders,
+  getOrders,
   getOrderDetail,
   confirmOrder,
   getReceipt,
+  getCategories,
+  getMenu,
+  createOrder,
 };
 
 export default KasirAPI;

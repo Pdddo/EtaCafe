@@ -27,7 +27,7 @@ import DetailPage from '../pages/pelanggan/DetailPage';
 import CartPage from '../pages/pelanggan/CartPage';
 import CheckoutPage from '../pages/pelanggan/CheckoutPage';
 import SuccessPage from '../pages/pelanggan/SuccessPage';
-import TrackPage from '../pages/pelanggan/TrackPage';
+
 import RiwayatPage from '../pages/pelanggan/RiwayatPage';
 import RiwayatDetailPage from '../pages/pelanggan/RiwayatDetailPage';
 
@@ -36,6 +36,8 @@ import KasirDashboardPage from '../pages/kasir/DashboardPage';
 import KasirDaftarPesananPage from '../pages/kasir/DaftarPesananPage';
 import KasirDetailPesananPage from '../pages/kasir/DetailPesananPage';
 import KasirStrukPage from '../pages/kasir/StrukPage';
+import KasirPesananBaruPage from '../pages/kasir/PesananBaruPage';
+import KasirPembayaranPage from '../pages/kasir/PembayaranPage';
 
 // ===================== DAPUR PAGES =====================
 import DapurAntrianPage from '../pages/dapur/AntrianPage';
@@ -73,7 +75,7 @@ function UnauthorizedPage() {
 
 // Wrapper layout untuk Pelanggan
 function PelangganRoute() {
-  const { user, logout: onLogout } = useAuth();
+  const { user } = useAuth();
   return (
     <PelangganLayout userName={user?.name ?? 'Pelanggan'}>
       <Outlet />
@@ -93,9 +95,8 @@ function KasirRoute() {
 
 // Wrapper layout untuk Dapur
 function DapurRoute() {
-  const { user, logout: onLogout } = useAuth();
   return (
-    <DapurLayout userName={user?.name ?? 'Dapur'} onLogout={onLogout}>
+    <DapurLayout>
       <Outlet />
     </DapurLayout>
   );
@@ -103,9 +104,8 @@ function DapurRoute() {
 
 // Wrapper layout untuk Manajer
 function ManajerRoute() {
-  const { user, logout: onLogout } = useAuth();
   return (
-    <ManajerLayout userName={user?.name ?? 'Manajer'} onLogout={onLogout}>
+    <ManajerLayout>
       <Outlet />
     </ManajerLayout>
   );
@@ -150,8 +150,6 @@ export default function AppRouter() {
           <Route path="cart" element={<CartPage />} />
           <Route path="checkout" element={<CheckoutPage />} />
           <Route path="success" element={<SuccessPage />} />
-          <Route path="track" element={<TrackPage />} />
-          <Route path="track/:id" element={<TrackPage />} />
           <Route path="riwayat" element={<RiwayatPage />} />
           <Route path="riwayat/:id" element={<RiwayatDetailPage />} />
         </Route>
@@ -169,6 +167,13 @@ export default function AppRouter() {
           <Route path="orders" element={<KasirDaftarPesananPage />} />
           <Route path="orders/:id" element={<KasirDetailPesananPage />} />
           <Route path="struk/:id" element={<KasirStrukPage />} />
+          <Route path="pesanan-baru" element={<KasirPesananBaruPage />} />
+          <Route path="pembayaran/:id" element={<KasirPembayaranPage />} />
+          {/* Aliases for convenience */}
+          <Route path="pesanan" element={<KasirDaftarPesananPage />} />
+          <Route path="pesanan/:id" element={<KasirDetailPesananPage />} />
+          <Route path="pesanan/:id/struk" element={<KasirStrukPage />} />
+          <Route path="pesanan/:id/pembayaran" element={<KasirPembayaranPage />} />
         </Route>
 
         {/* ================= DAPUR ROUTES ================= */}
@@ -194,6 +199,7 @@ export default function AppRouter() {
             </ProtectedRoute>
           }
         >
+          <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<ManajerDashboardPage />} />
           <Route path="menu" element={<ManajerKelolaMenuPage />} />
           <Route path="kategori" element={<ManajerKelolaKategoriPage />} />

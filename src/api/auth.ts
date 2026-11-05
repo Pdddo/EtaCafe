@@ -43,9 +43,16 @@ export async function register(
   });
 }
 
+export async function getCurrentUser(): Promise<AuthResponse> {
+  return request<AuthResponse>('/auth/me', {
+    method: 'GET',
+  });
+}
+
 export const AuthAPI = {
   login,
   register,
+  getCurrentUser,
 };
 
 export default AuthAPI;

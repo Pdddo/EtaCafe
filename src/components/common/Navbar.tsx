@@ -2,7 +2,7 @@
 // PERAN    : Navigasi utama terpadu bertema EtaCafe (Etalase Cafe)
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import { Role } from '../../types/index';
 import './Navbar.css';
@@ -47,46 +47,94 @@ export default function Navbar({ role: roleProp, className }: NavbarProps) {
         <div className="etacafe-navbar-links">
           {isPelanggan && (
             <>
-              <Link to="/pelanggan/home" className="etacafe-navbar-link">
+              <NavLink
+                to="/pelanggan/home"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
                 Home
-              </Link>
-              <Link to="/pelanggan/products" className="etacafe-navbar-link">
+              </NavLink>
+              <NavLink
+                to="/pelanggan/products"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
                 Menu
-              </Link>
-              <Link to="/pelanggan/cart" className="etacafe-navbar-link">
+              </NavLink>
+              <NavLink
+                to="/pelanggan/cart"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
                 Keranjang
-              </Link>
+              </NavLink>
             </>
           )}
           {isKasir && (
             <>
-              <Link to="/kasir/dashboard" className="etacafe-navbar-link">
+              <NavLink
+                to="/kasir/dashboard"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
                 Dashboard
-              </Link>
-              <Link to="/kasir/orders" className="etacafe-navbar-link">
-                Pesanan
-              </Link>
+              </NavLink>
+              <NavLink
+                to="/kasir/orders"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
+                Daftar Pesanan
+              </NavLink>
+              <NavLink
+                to="/kasir/pesanan-baru"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
+                Pesanan Baru
+              </NavLink>
             </>
           )}
           {isDapur && (
-            <Link to="/dapur/antrian" className="etacafe-navbar-link">
+            <NavLink
+              to="/dapur/antrian"
+              className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+            >
               Antrean Dapur
-            </Link>
+            </NavLink>
           )}
           {isManajer && (
             <>
-              <Link to="/manajer/dashboard" className="etacafe-navbar-link">
+              <NavLink
+                to="/manajer/dashboard"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
                 Dashboard
-              </Link>
-              <Link to="/manajer/menu" className="etacafe-navbar-link">
-                Kelola Menu
-              </Link>
-              <Link to="/manajer/pengguna" className="etacafe-navbar-link">
-                Pengguna
-              </Link>
-              <Link to="/manajer/laporan" className="etacafe-navbar-link">
+              </NavLink>
+              <NavLink
+                to="/manajer/laporan"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
                 Laporan
-              </Link>
+              </NavLink>
+              <NavLink
+                to="/manajer/menu"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
+                Kelola Menu
+              </NavLink>
+              <NavLink
+                to="/manajer/kategori"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
+                Kategori
+              </NavLink>
+              <NavLink
+                to="/manajer/pengguna"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
+                Pengguna
+              </NavLink>
+              <NavLink
+                to="/manajer/promo"
+                className={({ isActive }) => `etacafe-navbar-link ${isActive ? 'active' : ''}`}
+              >
+                Promo
+              </NavLink>
             </>
           )}
 
