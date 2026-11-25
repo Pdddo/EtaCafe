@@ -18,6 +18,7 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
     price: 18000,
     description: 'Espresso double shot dipadukan susu segar creamy dan gula aren organik khas perkebunan lokal Sulawesi Selatan. Diracik khusus oleh barista EtaCafe.',
     image_url: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=1200&q=85',
+    stock: 25,
     is_available: true,
   },
   2: {
@@ -27,6 +28,7 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
     price: 24000,
     description: 'Sirup vanila lembut, steamed milk, shot espresso pekat dengan saus karamel manis.',
     image_url: 'https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=1200&q=85',
+    stock: 15,
     is_available: true,
   },
   3: {
@@ -36,6 +38,7 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
     price: 22000,
     description: 'Matcha Uji Jepang premium dipadukan susu hangat atau dingin menyegarkan.',
     image_url: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=1200&q=85',
+    stock: 20,
     is_available: true,
   },
   4: {
@@ -45,6 +48,7 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
     price: 28000,
     description: 'Nasi goreng harum rempah nusantara dengan suwiran ayam, bakso, telur mata sapi, acar, dan kerupuk.',
     image_url: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=1200&q=85',
+    stock: 30,
     is_available: true,
   },
   5: {
@@ -54,6 +58,7 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
     price: 25000,
     description: 'Ayam krispi gurih digeprek sambal korek pedas segar dengan nasi putih pulen.',
     image_url: 'https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=1200&q=85',
+    stock: 18,
     is_available: true,
   },
   6: {
@@ -63,6 +68,7 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
     price: 35000,
     description: 'Pasta spaghetti al dente saus keju parmesan creamy, beef bacon renyah, dan taburan oregano.',
     image_url: 'https://images.unsplash.com/photo-1612927601601-6638404737ce?w=1200&q=85',
+    stock: 12,
     is_available: true,
   },
   7: {
@@ -72,6 +78,7 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
     price: 48000,
     description: 'Iga sapi empuk kuah rempah bening gurih bertabur daun seledri dan emping.',
     image_url: 'https://images.unsplash.com/photo-1547592180-85f173990554?w=1200&q=85',
+    stock: 0,
     is_available: false,
   },
   8: {
@@ -81,6 +88,7 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
     price: 16000,
     description: 'Tahu sutra dipotong dadu digoreng garing dengan tumisan bawang putih dan irisan cabe rawit.',
     image_url: 'https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=1200&q=85',
+    stock: 20,
     is_available: true,
   },
   9: {
@@ -90,6 +98,7 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
     price: 20000,
     description: 'Kentang goreng renyah bumbu truffle aromatik dan taburan keju parmesan.',
     image_url: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=1200&q=85',
+    stock: 25,
     is_available: true,
   },
   10: {
@@ -99,6 +108,7 @@ const FALLBACK_MENUS: Record<number, MenuItemData> = {
     price: 22000,
     description: 'Croissant waffle renyah berlapis saus dark cokelat Belgia dan kacang almond panggang.',
     image_url: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=1200&q=85',
+    stock: 10,
     is_available: true,
   },
 };
@@ -179,6 +189,17 @@ export default function DetailPage() {
             <div className="hero-overlay">
               <div className="hero-info-left">
                 <h1 className="hero-product-name">{item.name}</h1>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', margin: '8px 0' }}>
+                  {item.is_available && (item.stock ?? 0) > 0 ? (
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#166534', backgroundColor: '#dcfce7', padding: '3px 10px', borderRadius: '6px' }}>
+                      Stok Tersedia: {item.stock} porsi
+                    </span>
+                  ) : (
+                    <span style={{ fontSize: '13px', fontWeight: 600, color: '#991b1b', backgroundColor: '#fee2e2', padding: '3px 10px', borderRadius: '6px' }}>
+                      Stok Habis / Tidak Tersedia
+                    </span>
+                  )}
+                </div>
                 <p className="hero-product-desc">{item.description}</p>
               </div>
 
@@ -197,7 +218,8 @@ export default function DetailPage() {
                   <button
                     type="button"
                     className="qty-btn"
-                    onClick={() => setQuantity((q) => q + 1)}
+                    disabled={quantity >= (item.stock ?? 0)}
+                    onClick={() => setQuantity((q) => Math.min(item.stock ?? 1, q + 1))}
                   >
                     +
                   </button>
@@ -206,10 +228,10 @@ export default function DetailPage() {
                 <button
                   type="button"
                   className="btn-add-to-cart"
-                  disabled={!item.is_available}
+                  disabled={!item.is_available || (item.stock ?? 0) <= 0}
                   onClick={handleAdd}
                 >
-                  {item.is_available ? 'Add to Cart' : 'Stok Habis'}
+                  {item.is_available && (item.stock ?? 0) > 0 ? 'Add to Cart' : 'Stok Habis'}
                 </button>
               </div>
             </div>

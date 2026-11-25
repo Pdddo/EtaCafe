@@ -76,9 +76,11 @@ export default function PesananBaruPage() {
         item.category_id === selectedCategoryId ||
         item.categoryId === selectedCategoryId;
 
+      const q = searchKeyword.toLowerCase().trim();
       const matchSearch =
-        !searchKeyword ||
-        item.name.toLowerCase().includes(searchKeyword.toLowerCase());
+        !q ||
+        (item.name || '').toLowerCase().includes(q) ||
+        (item.description || '').toLowerCase().includes(q);
 
       return matchCat && matchSearch;
     });
@@ -93,11 +95,26 @@ export default function PesananBaruPage() {
   const serviceFee = subtotal > 0 ? Math.round(subtotal * 0.05) : 0; // Biaya Layanan 5%
   const grandTotal = subtotal + taxAmount + serviceFee;
 
+  const handleCategoryChange = (catId: number | null) => {
+    setSelectedCategoryId(catId);
+    setSearchKeyword(''); // Rekomendasi: Fitur search otomatis di-reset saat pindah kategori
+  };
+
   // Cart Actions
   const handleAddToCart = (menuItem: MenuItem) => {
+    const isAvail = menuItem.is_available ?? menuItem.isAvailable ?? true;
+    const stock = menuItem.stock ?? 0;
+    if (!isAvail || stock <= 0) {
+      setErrorMessage(`Menu "${menuItem.name}" sedang habis / tidak tersedia.`);
+      return;
+    }
     setCart((prev) => {
       const idx = prev.findIndex((c) => String(c.menuItem.id) === String(menuItem.id));
       if (idx >= 0) {
+        if (prev[idx].quantity + 1 > stock) {
+          setErrorMessage(`Stok untuk "${menuItem.name}" hanya tersisa ${stock}.`);
+          return prev;
+        }
         const updated = [...prev];
         updated[idx] = { ...updated[idx], quantity: updated[idx].quantity + 1 };
         return updated;
@@ -112,7 +129,12 @@ export default function PesananBaruPage() {
       return prev
         .map((entry) => {
           if (String(entry.menuItem.id) === String(menuId)) {
+            const stock = entry.menuItem.stock ?? 999;
             const nextQty = entry.quantity + delta;
+            if (nextQty > stock) {
+              setErrorMessage(`Stok untuk "${entry.menuItem.name}" hanya tersisa ${stock}.`);
+              return entry;
+            }
             return nextQty > 0 ? { ...entry, quantity: nextQty } : null;
           }
           return entry;
@@ -257,7 +279,7 @@ export default function PesananBaruPage() {
             <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '4px' }}>
               <button
                 type="button"
-                onClick={() => setSelectedCategoryId(null)}
+                onClick={() => handleCategoryChange(null)}
                 style={{
                   padding: '6px 14px',
                   borderRadius: '9999px',
@@ -277,7 +299,7 @@ export default function PesananBaruPage() {
                 <button
                   key={cat.id}
                   type="button"
-                  onClick={() => setSelectedCategoryId(cat.id)}
+                  onClick={() => handleCategoryChange(cat.id)}
                   style={{
                     padding: '6px 14px',
                     borderRadius: '9999px',
@@ -310,6 +332,10 @@ export default function PesananBaruPage() {
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: '16px' }}>
               {filteredMenu.map((item: any) => {
                 const img = item.image_url || item.imageUrl || 'https://images.unsplash.com/photo-1509042239860-f550ce710b93?w=400';
+                const isAvail = item.is_available ?? item.isAvailable ?? true;
+                const stock = item.stock ?? 0;
+                const canOrder = isAvail && stock > 0;
+
                 return (
                   <div
                     key={item.id}
@@ -341,27 +367,39 @@ export default function PesananBaruPage() {
                         <h4 style={{ margin: '0 0 4px 0', fontSize: '14px', fontWeight: 700, color: '#2c1810' }}>
                           {item.name}
                         </h4>
-                        <div style={{ fontSize: '13px', fontWeight: 800, color: '#844c1c', marginBottom: '8px' }}>
-                          <RupiahText amount={item.price} />
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                          <div style={{ fontSize: '13px', fontWeight: 800, color: '#844c1c' }}>
+                            <RupiahText amount={item.price} />
+                          </div>
+                          {canOrder ? (
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#166534', backgroundColor: '#dcfce7', padding: '2px 8px', borderRadius: '4px' }}>
+                              Stok: {stock}
+                            </span>
+                          ) : (
+                            <span style={{ fontSize: '11px', fontWeight: 700, color: '#991b1b', backgroundColor: '#fee2e2', padding: '2px 8px', borderRadius: '4px' }}>
+                              Habis
+                            </span>
+                          )}
                         </div>
                       </div>
 
                       <button
                         type="button"
+                        disabled={!canOrder}
                         onClick={() => handleAddToCart(item)}
                         style={{
                           width: '100%',
                           padding: '7px 0',
                           borderRadius: '8px',
                           border: 'none',
-                          backgroundColor: '#2c1810',
-                          color: '#fff',
+                          backgroundColor: canOrder ? '#2c1810' : '#e5e7eb',
+                          color: canOrder ? '#fff' : '#9ca3af',
                           fontWeight: 700,
                           fontSize: '12px',
-                          cursor: 'pointer',
+                          cursor: canOrder ? 'pointer' : 'not-allowed',
                         }}
                       >
-                        + Tambah ke Keranjang
+                        {canOrder ? '+ Tambah ke Keranjang' : 'Stok Habis'}
                       </button>
                     </div>
                   </div>

@@ -12,6 +12,7 @@ export interface MenuItemData {
   description: string;
   price: number;
   image_url: string;
+  stock: number;
   is_available: boolean;
   category_id: number;
   category?: CategoryData;

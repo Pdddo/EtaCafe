@@ -119,12 +119,24 @@ def checkout_pesanan(
                 detail=f"Menu dengan ID {item_data.menu_item_id} tidak ditemukan."
             )
 
-        # Validasi ketersediaan menu (BR-07)
-        if not menu.is_available:
+        # Validasi ketersediaan menu (BR-07) dan ketersediaan stok
+        if not menu.is_available or menu.stock <= 0:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Menu '{menu.name}' sedang tidak tersedia dan tidak dapat dipesan."
+                detail=f"Menu '{menu.name}' sedang tidak tersedia atau stok habis dan tidak dapat dipesan."
             )
+
+        if menu.stock < item_data.quantity:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail=f"Stok untuk menu '{menu.name}' tidak mencukupi (sisa stok: {menu.stock}, jumlah dipesan: {item_data.quantity})."
+            )
+
+        # Kurangi stok menu secara otomatis
+        menu.stock -= item_data.quantity
+        if menu.stock <= 0:
+            menu.stock = 0
+            menu.is_available = False  # Otomatis tidak tersedia ketika stok habis
 
         item_subtotal = menu.price * item_data.quantity
         subtotal += item_subtotal
@@ -264,6 +276,14 @@ def batalkan_pesanan_mandiri(
 
     order.status = OrderStatus.DIBATALKAN
     order.cancelled_at = datetime.utcnow()
+
+    # Kembalikan stok menu jika pesanan dibatalkan
+    for it in order.items:
+        if it.menu_item:
+            it.menu_item.stock += it.quantity
+            if it.menu_item.stock > 0 and not it.menu_item.is_available:
+                it.menu_item.is_available = True
+
     db.commit()
     db.refresh(order)
     return order

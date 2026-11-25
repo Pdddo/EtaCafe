@@ -11,13 +11,18 @@ export type OrderType = 'langsung' | 'qr_meja';
 
 export interface MenuItem {
   custom_notes?: string;
-  id: string;
+  id: string | number;
   name: string;
-  category: string;
+  category?: string;
+  category_id?: number;
+  categoryId?: number;
   price: number;
   description: string;
-  isAvailable: boolean;
-  imageUrl: string;
+  isAvailable?: boolean;
+  is_available?: boolean;
+  imageUrl?: string;
+  image_url?: string;
+  stock: number;
 }
 
 export interface Category {

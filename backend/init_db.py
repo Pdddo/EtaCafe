@@ -88,6 +88,7 @@ def init_database():
                 price=18000,
                 description="Espresso double shot dipadukan susu segar creamy dan gula aren organik khas EtaCafe.",
                 image_url="https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600",
+                stock=25,
                 is_available=True,
             ),
             MenuItem(
@@ -96,6 +97,7 @@ def init_database():
                 price=24000,
                 description="Sirup vanila lembut, steamed milk, shot espresso pekat dengan saus karamel manis.",
                 image_url="https://images.unsplash.com/photo-1536256263959-770b48d82b0a?w=600",
+                stock=15,
                 is_available=True,
             ),
             MenuItem(
@@ -104,6 +106,7 @@ def init_database():
                 price=22000,
                 description="Matcha Uji Jepang premium dipadukan susu hangat atau dingin menyegarkan.",
                 image_url="https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600",
+                stock=20,
                 is_available=True,
             ),
             MenuItem(
@@ -112,6 +115,7 @@ def init_database():
                 price=28000,
                 description="Nasi goreng harum rempah nusantara dengan suwiran ayam, bakso, telur mata sapi, acar, dan kerupuk.",
                 image_url="https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600",
+                stock=30,
                 is_available=True,
             ),
             MenuItem(
@@ -120,6 +124,7 @@ def init_database():
                 price=25000,
                 description="Ayam krispi gurih digeprek sambal korek pedas segar dengan nasi putih pulen.",
                 image_url="https://images.unsplash.com/photo-1598515214211-89d3c73ae83b?w=600",
+                stock=18,
                 is_available=True,
             ),
             MenuItem(
@@ -128,6 +133,7 @@ def init_database():
                 price=35000,
                 description="Pasta spaghetti al dente saus keju parmesan creamy, beef bacon renyah, dan taburan oregano.",
                 image_url="https://images.unsplash.com/photo-1612927601601-6638404737ce?w=600",
+                stock=12,
                 is_available=True,
             ),
             MenuItem(
@@ -136,7 +142,8 @@ def init_database():
                 price=48000,
                 description="Iga sapi empuk kuah rempah bening gurih bertabur daun seledri dan emping.",
                 image_url="https://images.unsplash.com/photo-1547592180-85f173990554?w=600",
-                is_available=False, # FR-34 & BR-07: Contoh menu habis / tidak tersedia
+                stock=0,
+                is_available=False, # FR-34 & BR-07: Contoh menu habis / tidak tersedia (stok 0)
             ),
             MenuItem(
                 name="Tahu Lada Garam Crispy",
@@ -144,6 +151,7 @@ def init_database():
                 price=16000,
                 description="Tahu sutra dipotong dadu digoreng garing dengan tumisan bawang putih dan irisan cabe rawit.",
                 image_url="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?w=600",
+                stock=20,
                 is_available=True,
             ),
             MenuItem(
@@ -152,6 +160,7 @@ def init_database():
                 price=20000,
                 description="Kentang goreng renyah bumbu truffle aromatik dan taburan keju parmesan.",
                 image_url="https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600",
+                stock=25,
                 is_available=True,
             ),
             MenuItem(
@@ -160,6 +169,7 @@ def init_database():
                 price=22000,
                 description="Croissant waffle renyah berlapis saus dark cokelat Belgia dan kacang almond panggang.",
                 image_url="https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=600",
+                stock=10,
                 is_available=True,
             ),
         ]

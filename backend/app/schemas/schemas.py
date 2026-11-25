@@ -50,6 +50,7 @@ class MenuItemBase(BaseModel):
     price: float
     description: Optional[str] = None
     image_url: Optional[str] = None
+    stock: int = 0
     is_available: bool = True
 
 class MenuItemCreate(MenuItemBase):
@@ -61,6 +62,7 @@ class MenuItemUpdate(BaseModel):
     price: Optional[float] = None
     description: Optional[str] = None
     image_url: Optional[str] = None
+    stock: Optional[int] = None
     is_available: Optional[bool] = None
 
 class MenuItemOut(MenuItemBase):

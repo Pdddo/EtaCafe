@@ -64,7 +64,13 @@ def daftar_seluruh_menu(db: Session = Depends(get_db)):
 def tambah_menu_baru(payload: MenuItemCreate, db: Session = Depends(get_db)):
     """FR-27 & BR-06: Manajer menambah data menu baru."""
     _pastikan_kategori_ada(db, payload.category_id)
-    menu = MenuItem(**payload.model_dump())
+    menu_data = payload.model_dump()
+    # Otomatis tidak tersedia jika stok <= 0
+    if menu_data.get("stock", 0) <= 0:
+        menu_data["stock"] = max(0, menu_data.get("stock", 0))
+        menu_data["is_available"] = False
+
+    menu = MenuItem(**menu_data)
     db.add(menu)
     db.commit()
     db.refresh(menu)
@@ -80,6 +86,14 @@ def ubah_data_menu(menu_id: int, payload: MenuItemUpdate, db: Session = Depends(
     data = payload.model_dump(exclude_unset=True)
     if "category_id" in data and data["category_id"] is not None:
         _pastikan_kategori_ada(db, data["category_id"])
+
+    # Logika ketersediaan otomatis berdasarkan stok
+    if "stock" in data and data["stock"] is not None:
+        data["stock"] = max(0, data["stock"])
+        if data["stock"] == 0:
+            data["is_available"] = False
+        elif "is_available" not in data and not menu.is_available:
+            data["is_available"] = True
 
     for key, val in data.items():
         setattr(menu, key, val)
@@ -97,6 +111,13 @@ def atur_ketersediaan_menu(menu_id: int, is_available: bool, db: Session = Depen
     menu = db.query(MenuItem).filter(MenuItem.id == menu_id).first()
     if not menu:
         raise HTTPException(status_code=404, detail="Item menu tidak ditemukan.")
+
+    if is_available and menu.stock <= 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Menu tidak dapat diaktifkan menjadi 'Tersedia' karena stoknya 0. Silakan isi stok terlebih dahulu."
+        )
+
     menu.is_available = is_available
     db.commit()
     db.refresh(menu)

@@ -14,6 +14,7 @@ export interface ManajerMenuItem {
   description?: string;
   image_url?: string;
   imageUrl?: string;
+  stock?: number;
   is_available?: boolean;
   isAvailable?: boolean;
 }
@@ -70,6 +71,7 @@ export async function createMenu(payload: {
   price: number;
   description?: string;
   image_url?: string;
+  stock?: number;
   is_available?: boolean;
 }): Promise<ManajerMenuItem> {
   return request<ManajerMenuItem>('/manajer/menus', {
@@ -86,6 +88,7 @@ export async function updateMenu(
     price?: number;
     description?: string;
     image_url?: string;
+    stock?: number;
     is_available?: boolean;
   }
 ): Promise<ManajerMenuItem> {

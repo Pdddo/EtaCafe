@@ -49,30 +49,38 @@ export default function ProductsPage({ initialType = "coffee" }: { initialType?:
   }, []);
 
   useEffect(() => {
-    if (selectedCategoryId === "all") {
-      setFilteredItems(menuItems);
-    } else {
-      setFilteredItems(menuItems.filter((item) => item.category_id === Number(selectedCategoryId)));
-    }
-  }, [selectedCategoryId, menuItems]);
+    let result = menuItems;
 
-  useEffect(() => {
-    if (searchQuery.trim()) {
-      setFilteredItems(
-        menuItems.filter((item) =>
-          item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          item.description.toLowerCase().includes(searchQuery.toLowerCase())
-        )
-      );
-    } else if (selectedCategoryId === "all") {
-      setFilteredItems(menuItems);
-    } else {
-      setFilteredItems(menuItems.filter((item) => item.category_id === Number(selectedCategoryId)));
+    // Filter berdasarkan kategori
+    if (selectedCategoryId !== "all") {
+      result = result.filter((item) => item.category_id === Number(selectedCategoryId));
     }
+
+    // Filter pencarian dengan proteksi null-safe untuk name dan description
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter((item) => {
+        const matchName = (item.name || "").toLowerCase().includes(q);
+        const matchDesc = (item.description || "").toLowerCase().includes(q);
+        return matchName || matchDesc;
+      });
+    }
+
+    setFilteredItems(result);
   }, [searchQuery, selectedCategoryId, menuItems]);
+
+  const handleCategoryChange = (catId: number | string) => {
+    setSelectedCategoryId(catId);
+    setSearchQuery(""); // Rekomendasi: Fitur search otomatis di-reset saat pindah kategori
+  };
 
   const handleAddToCart = (e: React.MouseEvent, item: MenuItemData) => {
     e.stopPropagation();
+    if (!item.is_available || (item.stock ?? 0) <= 0) {
+      setToastMessage(`⚠ Menu ${item.name} sedang habis.`);
+      setTimeout(() => setToastMessage(null), 2200);
+      return;
+    }
     addToCart(item, 1);
     setToastMessage(`✓ ${item.name} berhasil ditambahkan ke keranjang!`);
     setTimeout(() => setToastMessage(null), 2200);
@@ -87,7 +95,7 @@ export default function ProductsPage({ initialType = "coffee" }: { initialType?:
             key="all"
             type="button"
             className={selectedCategoryId === "all" ? "category-tab-btn active" : "category-tab-btn"}
-            onClick={() => setSelectedCategoryId("all")}
+            onClick={() => handleCategoryChange("all")}
           >
             Semua Menu
           </button>
@@ -101,7 +109,7 @@ export default function ProductsPage({ initialType = "coffee" }: { initialType?:
               key={cat.id}
               type="button"
               className={selectedCategoryId === cat.id ? "category-tab-btn active" : "category-tab-btn"}
-              onClick={() => setSelectedCategoryId(cat.id)}
+              onClick={() => handleCategoryChange(cat.id)}
             >
               {cat.name}
             </button>
@@ -152,13 +160,22 @@ export default function ProductsPage({ initialType = "coffee" }: { initialType?:
                 />
                 <div className="menu-card-body">
                   <div>
-                    <span className="menu-card-cat-badge">{catName}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" }}>
+                      <span className="menu-card-cat-badge">{catName}</span>
+                      {item.is_available && (item.stock ?? 0) > 0 ? (
+                        <span className={`stock-tag ${(item.stock ?? 0) <= 5 ? "low" : ""}`}>
+                          Stok: {item.stock}
+                        </span>
+                      ) : (
+                        <span className="unavailable-tag">Stok Habis</span>
+                      )}
+                    </div>
                     <h3 className="menu-card-name">{item.name}</h3>
                     <p className="menu-card-desc">{item.description}</p>
                   </div>
                   <div className="menu-card-footer">
                     <span className="menu-card-price">{formatRupiah(item.price)}</span>
-                    {item.is_available ? (
+                    {item.is_available && (item.stock ?? 0) > 0 ? (
                       <button
                         type="button"
                         className="btn-add-cart"
@@ -167,7 +184,20 @@ export default function ProductsPage({ initialType = "coffee" }: { initialType?:
                         Add to Cart
                       </button>
                     ) : (
-                      <span className="unavailable-tag">Habis / Tidak Tersedia</span>
+                      <button
+                        type="button"
+                        className="btn-add-cart"
+                        disabled
+                        style={{
+                          opacity: 0.6,
+                          cursor: "not-allowed",
+                          backgroundColor: "#f3f4f6",
+                          color: "#9ca3af",
+                          borderColor: "#d1d5db",
+                        }}
+                      >
+                        Habis
+                      </button>
                     )}
                   </div>
                 </div>

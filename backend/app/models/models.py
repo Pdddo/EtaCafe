@@ -51,6 +51,7 @@ class MenuItem(Base):
     price = Column(Float, nullable=False)
     description = Column(Text, nullable=True)
     image_url = Column(String(500), nullable=True)
+    stock = Column(Integer, default=0, nullable=False)
     is_available = Column(Boolean, default=True, nullable=False) # FR-34 & BR-07
     created_at = Column(DateTime, default=datetime.utcnow)
 

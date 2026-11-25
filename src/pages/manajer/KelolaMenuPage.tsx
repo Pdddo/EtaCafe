@@ -38,6 +38,7 @@ export default function KelolaMenuPage() {
     name: '',
     category_id: 0,
     price: 0,
+    stock: 0,
     description: '',
     image_url: '',
     is_available: true,
@@ -70,20 +71,36 @@ export default function KelolaMenuPage() {
   // Filtered Menu List
   const filteredMenus = useMemo(() => {
     return menus.filter((item) => {
-      const matchSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+      const q = searchQuery.toLowerCase().trim();
+      const matchSearch =
+        !q ||
+        (item.name || '').toLowerCase().includes(q) ||
+        (item.description || '').toLowerCase().includes(q);
       const catId = item.category_id || item.category_rel?.id;
       const matchCategory =
         selectedCategory === 'all' ||
         String(catId) === selectedCategory ||
-        item.category?.toLowerCase() === selectedCategory.toLowerCase();
+        (item.category || '').toLowerCase() === selectedCategory.toLowerCase();
       return matchSearch && matchCategory;
     });
   }, [menus, searchQuery, selectedCategory]);
+
+  const handleCategoryChange = (catId: string) => {
+    setSelectedCategory(catId);
+    setSearchQuery(''); // Rekomendasi: Fitur search otomatis di-reset saat pindah kategori
+  };
 
   // Handle Toggle Availability
   const handleToggle = async (item: ManajerMenuItem) => {
     const currentStatus = item.is_available ?? item.isAvailable ?? true;
     const newStatus = !currentStatus;
+
+    if (newStatus && (item.stock ?? 0) <= 0) {
+      alert(
+        `Menu "${item.name}" tidak dapat diaktifkan menjadi TERSEDIA karena stoknya 0. Silakan klik tombol 'Edit' untuk menambah stok terlebih dahulu.`
+      );
+      return;
+    }
 
     try {
       await toggleMenuAvailability(item.id, newStatus);
@@ -112,6 +129,7 @@ export default function KelolaMenuPage() {
       name: '',
       category_id: categories.length > 0 ? Number(categories[0].id) : 1,
       price: 0,
+      stock: 20,
       description: '',
       image_url: '',
       is_available: true,
@@ -127,6 +145,7 @@ export default function KelolaMenuPage() {
       name: item.name,
       category_id: Number(item.category_id || item.category_rel?.id || 1),
       price: item.price,
+      stock: item.stock ?? 0,
       description: item.description || '',
       image_url: item.image_url || item.imageUrl || '',
       is_available: item.is_available ?? item.isAvailable ?? true,
@@ -146,10 +165,17 @@ export default function KelolaMenuPage() {
       setFormError('Harga menu wajib bernilai positif (> 0). (BR-06)');
       return;
     }
+    if (formData.stock < 0) {
+      setFormError('Stok menu tidak boleh bernilai negatif.');
+      return;
+    }
     if (!formData.category_id) {
       setFormError('Pilih kategori yang valid.');
       return;
     }
+
+    const finalStock = Number(formData.stock);
+    const finalAvailable = finalStock === 0 ? false : formData.is_available;
 
     try {
       setSubmitting(true);
@@ -160,9 +186,10 @@ export default function KelolaMenuPage() {
           name: formData.name,
           category_id: formData.category_id,
           price: Number(formData.price),
+          stock: finalStock,
           description: formData.description,
           image_url: formData.image_url,
-          is_available: formData.is_available,
+          is_available: finalAvailable,
         });
         setSuccessMsg(`Menu "${formData.name}" berhasil diperbarui.`);
       } else {
@@ -170,9 +197,10 @@ export default function KelolaMenuPage() {
           name: formData.name,
           category_id: formData.category_id,
           price: Number(formData.price),
+          stock: finalStock,
           description: formData.description,
           image_url: formData.image_url,
-          is_available: formData.is_available,
+          is_available: finalAvailable,
         });
         setSuccessMsg(`Menu baru "${formData.name}" berhasil ditambahkan.`);
       }
@@ -278,7 +306,7 @@ export default function KelolaMenuPage() {
           <button
             type="button"
             className={`manajer-subnav-pill ${selectedCategory === 'all' ? 'active' : ''}`}
-            onClick={() => setSelectedCategory('all')}
+            onClick={() => handleCategoryChange('all')}
           >
             Semua Menu ({menus.length})
           </button>
@@ -289,7 +317,7 @@ export default function KelolaMenuPage() {
               className={`manajer-subnav-pill ${
                 selectedCategory === String(c.id) ? 'active' : ''
               }`}
-              onClick={() => setSelectedCategory(String(c.id))}
+              onClick={() => handleCategoryChange(String(c.id))}
             >
               {c.name}
             </button>
@@ -394,6 +422,21 @@ export default function KelolaMenuPage() {
                   </div>
                   <div className="manajer-menu-details-row">
                     <strong>Harga</strong> : Rp. {Number(item.price).toLocaleString('id-ID')},-
+                  </div>
+                  <div className="manajer-menu-details-row">
+                    <strong>Stok Tersedia</strong> :{' '}
+                    <span
+                      style={{
+                        fontWeight: 700,
+                        color: (item.stock ?? 0) > 0 ? '#166534' : '#991b1b',
+                        backgroundColor: (item.stock ?? 0) > 0 ? '#dcfce7' : '#fee2e2',
+                        padding: '2px 8px',
+                        borderRadius: '6px',
+                        fontSize: '13px',
+                      }}
+                    >
+                      {(item.stock ?? 0) > 0 ? `${item.stock} porsi` : '0 (Stok Habis)'}
+                    </span>
                   </div>
                   {item.description && (
                     <div className="manajer-menu-details-row" style={{ color: '#665c54' }}>
@@ -505,6 +548,30 @@ export default function KelolaMenuPage() {
                 />
                 <span style={{ fontSize: '12px', color: '#665c54' }}>
                   Wajib bernilai positif (BR-06)
+                </span>
+              </div>
+
+              <div className="manajer-form-group">
+                <label className="manajer-form-label">Jumlah Stok *</label>
+                <input
+                  type="number"
+                  className="manajer-form-input"
+                  min="0"
+                  step="1"
+                  placeholder="Contoh: 20"
+                  value={formData.stock ?? 0}
+                  onChange={(e) => {
+                    const val = Math.max(0, parseInt(e.target.value, 10) || 0);
+                    setFormData({
+                      ...formData,
+                      stock: val,
+                      is_available: val === 0 ? false : formData.is_available,
+                    });
+                  }}
+                  required
+                />
+                <span style={{ fontSize: '12px', color: '#665c54' }}>
+                  Jika stok diatur 0, status menu otomatis diubah menjadi Tidak Tersedia / Habis (OFF).
                 </span>
               </div>
 
